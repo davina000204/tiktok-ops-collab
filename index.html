@@ -53,6 +53,7 @@ button { cursor: pointer; }
 .top-actions { display: flex; gap: 10px; align-items: center; }
 .button { border: 1px solid transparent; border-radius: 10px; min-height: 39px; padding: 0 16px; font-weight: 700; transition: .16s ease; white-space: nowrap; }
 .button:hover { transform: translateY(-1px); }
+.button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
 .button.primary { background: var(--teal); color: white; box-shadow: 0 8px 20px rgba(15,159,132,.18); }
 .button.primary:hover { background: var(--teal-dark); }
 .button.subtle { background: #fff; border-color: var(--line); color: var(--ink); }
@@ -107,11 +108,14 @@ button { cursor: pointer; }
 .table-title p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 920px; }
+.select-cell { width: 44px; text-align: center; padding-left: 14px !important; padding-right: 8px !important; }
+.select-cell input { width: 16px; height: 16px; accent-color: var(--teal); cursor: pointer; }
 th { text-align: left; font-size: 10px; letter-spacing: .7px; text-transform: uppercase; color: #81908a; background: #f8faf9; padding: 12px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; }
 td { padding: 14px 16px; border-bottom: 1px solid #edf0ee; vertical-align: middle; font-size: 12px; }
 tbody tr:hover { background: #fbfdfc; }
 td strong { display: block; font-size: 13px; margin-bottom: 3px; }
 td small { display: block; color: var(--muted); line-height: 1.4; max-width: 300px; }
+td small.anomaly-text { color: var(--amber); font-weight: 700; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
 .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 999px; font-weight: 750; font-size: 10px; white-space: nowrap; background: #eef2f0; color: #5e6d67; }
 .status-badge::before { content:""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -226,7 +230,7 @@ body.is-viewer .read-only-note { display:block; }
   .role-list > div { flex-direction:column; gap:3px; }
 }
 
-</style>
+  </style>
 </head>
 <body class="auth-locked">
   <div class="auth-screen" id="auth-screen">
@@ -366,6 +370,7 @@ body.is-viewer .read-only-note { display:block; }
           <div class="search-wrap"><span>⌕</span><input id="sample-search" placeholder="搜索达人、产品、商品ID"></div>
           <select id="sample-status-filter">
             <option value="">全部状态</option>
+            <option value="__review__">待核实 / OCR 异常</option>
             <option value="待审核">待审核</option>
             <option value="待补全">待补全</option>
             <option value="待拍摄">待拍摄</option>
@@ -375,12 +380,14 @@ body.is-viewer .read-only-note { display:block; }
             <option value="已拒绝">已拒绝</option>
           </select>
           <button class="button subtle" id="sample-export-btn">导出当前列表</button>
+          <button class="button primary edit-only" id="batch-approve-btn" disabled>批量通过 <span id="selected-sample-count">0</span></button>
+          <button class="button subtle edit-only" id="batch-reject-btn" disabled>批量拒绝</button>
         </div>
         <article class="panel table-panel">
           <div class="table-title">
             <div>
               <h2>待审核样品申请</h2>
-              <p>按达人 ID、产品 ID 和活动 ID 去重。</p>
+              <p>截图自动导入后只进入待审核，不会自动批准寄样；勾选后可批量处理。</p>
             </div>
             <span class="count-chip" id="sample-count-label">0 条</span>
           </div>
@@ -907,6 +914,7 @@ window.SEED_DATA = {
   let editingId = null;
   let activeMessageId = null;
   let activeCodeId = null;
+  let selectedSampleIds = new Set();
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -980,6 +988,7 @@ window.SEED_DATA = {
     });
 
     document.body.addEventListener("click", handleDelegatedClick);
+    document.body.addEventListener("change", handleDelegatedChange);
     $("#add-record-btn").addEventListener("click", () => openRecordDialog());
     $("#export-csv-btn").addEventListener("click", exportFeishuCsv);
     $("#sample-export-btn").addEventListener("click", () => exportRecordsCsv(filteredSamples(), "待审核样品"));
@@ -992,6 +1001,8 @@ window.SEED_DATA = {
     $("#import-file").addEventListener("change", handleFileImport);
     $("#sample-search").addEventListener("input", renderSamples);
     $("#sample-status-filter").addEventListener("change", renderSamples);
+    $("#batch-approve-btn").addEventListener("click", () => batchUpdateSampleStatus("待拍摄", "是"));
+    $("#batch-reject-btn").addEventListener("click", () => batchUpdateSampleStatus("已拒绝", "否"));
     $("#video-search").addEventListener("input", renderVideos);
     $("#video-status-filter").addEventListener("change", renderVideos);
     $("#save-record-btn").addEventListener("click", saveRecordFromForm);
@@ -1041,6 +1052,23 @@ window.SEED_DATA = {
     if (action === "member-revoke") revokeEditAccess(id);
     if (action === "request-approve") approveAccessRequest(id);
     if (action === "request-reject") rejectAccessRequest(id);
+  }
+
+  function handleDelegatedChange(event) {
+    const checkbox = event.target.closest("[data-select-id], [data-select-all]");
+    if (!checkbox) return;
+    if (checkbox.dataset.selectAll !== undefined) {
+      const selectable = filteredSamples().filter((record) => record.status === "待审核");
+      if (checkbox.checked) selectable.forEach((record) => selectedSampleIds.add(record.id));
+      else selectable.forEach((record) => selectedSampleIds.delete(record.id));
+      renderSamples();
+      return;
+    }
+    const id = checkbox.dataset.selectId;
+    if (!id) return;
+    if (checkbox.checked) selectedSampleIds.add(id);
+    else selectedSampleIds.delete(id);
+    updateBatchButtons();
   }
 
   function switchView(view) {
@@ -1144,7 +1172,11 @@ window.SEED_DATA = {
     const status = $("#sample-status-filter")?.value || "";
     return state.records
       .filter((record) => record.type === "sample")
-      .filter((record) => !status || record.status === status)
+      .filter((record) => {
+        if (!status) return true;
+        if (status === "__review__") return getAnomalies(record).length > 0;
+        return record.status === status;
+      })
       .filter((record) => matchesQuery(record, query));
   }
 
@@ -1165,25 +1197,33 @@ window.SEED_DATA = {
 
   function renderSamples() {
     const records = filteredSamples();
+    const canSelect = canEdit();
+    const selectableIds = new Set(canSelect ? records.filter((record) => record.status === "待审核").map((record) => record.id) : []);
+    selectedSampleIds = new Set([...selectedSampleIds].filter((id) => selectableIds.has(id)));
     $("#sample-count-label").textContent = `${records.length} 条`;
     const table = $("#sample-table");
-    const header = `<thead><tr><th>日期</th><th>达人</th><th>产品</th><th>商品 / SKU</th><th>BD</th><th>状态</th><th>操作</th></tr></thead>`;
+    const allSelected = selectableIds.size > 0 && [...selectableIds].every((id) => selectedSampleIds.has(id));
+    const header = `<thead><tr><th class="select-cell"><input type="checkbox" data-select-all ${allSelected ? "checked" : ""} ${selectableIds.size ? "" : "disabled"} title="选择当前列表中的待审核申请"></th><th>日期</th><th>达人</th><th>产品</th><th>商品 / SKU</th><th>BD</th><th>状态</th><th>操作</th></tr></thead>`;
     const body = records.map((record) => {
       const anomalies = getAnomalies(record);
+      const selectable = canSelect && record.status === "待审核";
+      const checked = selectedSampleIds.has(record.id);
       return `<tr>
+        <td class="select-cell">${selectable ? `<input type="checkbox" data-select-id="${escapeHtml(record.id)}" ${checked ? "checked" : ""} aria-label="选择 @${escapeAttr(record.creatorId || "未命名")}">` : ""}</td>
         <td class="mono">${escapeHtml(record.date || "—")}</td>
         <td><strong>${escapeHtml(displayCreator(record))}</strong><small>${escapeHtml(record.creatorName || "达人昵称未填")}</small></td>
         <td><strong>${escapeHtml(record.productName || "未匹配产品")}</strong><small>${escapeHtml(record.productId || "缺少商品 ID")}</small><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
         <td><span class="mono">${escapeHtml(record.productId || "—")}</span><small>${escapeHtml(record.sku || "—")}</small></td>
         <td>${escapeHtml(record.bd || "—")}</td>
-        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(record.status)}</span>${anomalies.length ? `<small>${escapeHtml(anomalies[0])}</small>` : ""}</td>
+        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(record.status)}</span>${anomalies.length ? `<small class="anomaly-text">${escapeHtml(anomalies.slice(0, 2).join(" · "))}</small>` : ""}</td>
         <td><div class="row-actions">
-          <button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">编辑</button>
+          <button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">${anomalies.length ? "核实" : "编辑"}</button>
           ${record.status === "待审核" ? `<button class="mini-button primary edit-only" data-action="approve" data-id="${escapeHtml(record.id)}">通过</button><button class="mini-button edit-only" data-action="reject" data-id="${escapeHtml(record.id)}">拒绝</button>` : record.status === "待补全" ? `<button class="mini-button edit-only" data-action="reject" data-id="${escapeHtml(record.id)}">拒绝</button>` : ""}
         </div></td>
       </tr>`;
     }).join("");
-    table.innerHTML = header + `<tbody>${body || `<tr><td colspan="7"><div class="empty-state">没有符合条件的样品申请</div></td></tr>`}</tbody>`;
+    table.innerHTML = header + `<tbody>${body || `<tr><td colspan="8"><div class="empty-state">没有符合条件的样品申请</div></td></tr>`}</tbody>`;
+    updateBatchButtons();
   }
 
   function renderVideos() {
@@ -1354,6 +1394,48 @@ window.SEED_DATA = {
       toast(`状态已更新为「${status}」`);
     } catch (error) {
       toast(`状态更新失败：${error.message}`, true);
+    }
+  }
+
+  function updateBatchButtons() {
+    const count = selectedSampleIds.size;
+    const approve = $("#batch-approve-btn");
+    const reject = $("#batch-reject-btn");
+    const label = $("#selected-sample-count");
+    const selectableIds = filteredSamples().filter((record) => record.status === "待审核").map((record) => record.id);
+    const selectAll = $("[data-select-all]");
+    if (label) label.textContent = String(count);
+    if (approve) approve.disabled = count === 0;
+    if (reject) reject.disabled = count === 0;
+    if (selectAll) selectAll.checked = selectableIds.length > 0 && selectableIds.every((id) => selectedSampleIds.has(id));
+  }
+
+  async function batchUpdateSampleStatus(status, approved) {
+    if (!canEdit()) { toast("当前角色不能批量审核", true); return; }
+    const ids = [...selectedSampleIds];
+    if (!ids.length) { toast("请先勾选待审核申请", true); return; }
+    const actionLabel = status === "待拍摄" ? "通过" : "拒绝";
+    if (!window.confirm(`将勾选的 ${ids.length} 条申请批量${actionLabel}吗？`)) return;
+    $("#batch-approve-btn").disabled = true;
+    $("#batch-reject-btn").disabled = true;
+    setSyncStatus(`正在批量${actionLabel}...`);
+    try {
+      const { data, error } = await collab
+        .from("records")
+        .update({ status, approved })
+        .in("id", ids)
+        .eq("status", "待审核")
+        .select("id");
+      if (error) throw error;
+      const updated = data?.length || 0;
+      selectedSampleIds.clear();
+      await refreshCloudData();
+      setSyncStatus("云端已同步");
+      toast(`已批量${actionLabel} ${updated} 条申请`);
+    } catch (error) {
+      setSyncStatus("批量审核失败");
+      toast(`批量审核失败：${error.message}`, true);
+      updateBatchButtons();
     }
   }
 
@@ -1658,6 +1740,7 @@ window.SEED_DATA = {
     const anomalies = [];
     if (!cleanHandle(record.creatorId) || record.creatorId === "待补全") anomalies.push("缺少达人 ID");
     if (!record.productId) anomalies.push("缺少商品 ID");
+    if (/待核实/.test(String(record.note || ""))) anomalies.push("OCR 识别待核实");
     if (record.type === "video" && !record.videoUrl) anomalies.push("缺少视频链接");
     if (record.type === "video" && !record.vid) anomalies.push("缺少 vid");
     if (record.status === "Code已收到" && !record.code) anomalies.push("缺少 Code");
