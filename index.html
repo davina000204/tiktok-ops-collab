@@ -397,7 +397,7 @@ body.is-viewer .read-only-note { display:block; }
           <div class="table-title">
             <div>
               <h2>待审核样品申请</h2>
-              <p>TikTok 页面数据实时同步；异常字段进入待核实，勾选后可批量处理。</p>
+              <p>TikTok 页面数据实时同步；同一达人 + 商品 PID 自动合并为一条，异常字段进入待核实。</p>
             </div>
             <span class="count-chip" id="sample-count-label">0 条</span>
           </div>
@@ -1092,6 +1092,7 @@ window.SEED_DATA = {
 
   function renderAll() {
     resolveCreatorAliases(state.records);
+    state.records = dedupeApplicationRecords(state.records);
     renderCounts();
     renderOverview();
     renderSamples();
@@ -1270,6 +1271,79 @@ window.SEED_DATA = {
       }
       if (matches.length === 1) record.creatorId = matches[0];
     }
+  }
+
+  const STATUS_PROGRESS = {
+    "待审核": 0, "待补全": 0, "待拍摄": 1, "已发货": 2,
+    "内容处理中": 3, "已完成": 4, "待索要Code": 5,
+    "Code已收到": 6, "待投放": 7, "已投放": 8
+  };
+
+  function applicationKey(record) {
+    const creator = cleanHandle(record.creatorId).toLowerCase();
+    const productId = String(record.productId || "").trim();
+    if (!creator || !productId) return "";
+    return `${creator}|${productId}`;
+  }
+
+  function statusProgress(status) {
+    const value = STATUS_PROGRESS[status];
+    return Number.isFinite(value) ? value : -1;
+  }
+
+  function isFilled(value) {
+    return value !== "" && value !== null && value !== undefined;
+  }
+
+  function mergeDuplicateApplication(group) {
+    const ordered = [...group].sort((a, b) => {
+      const progressCompare = statusProgress(b.status) - statusProgress(a.status);
+      if (progressCompare) return progressCompare;
+      const timeCompare = compareApplicationTimeDesc(a, b);
+      if (timeCompare) return timeCompare;
+      return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+    });
+    const primary = { ...ordered[0] };
+
+    for (const duplicate of ordered.slice(1)) {
+      Object.entries(duplicate).forEach(([key, value]) => {
+        if (["id", "status", "date", "appliedAt", "createdAt", "updatedAt", "source"].includes(key)) return;
+        if (!isFilled(primary[key]) && isFilled(value)) primary[key] = value;
+      });
+      for (const field of ["creatorName", "productName", "sku", "campaignName", "note"]) {
+        const current = String(primary[field] || "");
+        const candidate = String(duplicate[field] || "");
+        if (candidate.length > current.length) primary[field] = candidate;
+      }
+    }
+
+    const positions = ordered
+      .map((record) => record.sourcePosition)
+      .filter((value) => value !== "" && value !== null && value !== undefined && Number.isFinite(Number(value)))
+      .map(Number);
+    if (positions.length) primary.sourcePosition = Math.min(...positions);
+
+    const timestamps = ordered
+      .flatMap((record) => [record.appliedAt, record.updatedAt, record.createdAt])
+      .map((value) => Date.parse(value || ""))
+      .filter(Number.isFinite);
+    if (timestamps.length) primary.updatedAt = new Date(Math.max(...timestamps)).toISOString();
+
+    primary.creatorAvatar = ordered.map((record) => safeAvatarUrl(record.creatorAvatar)).find(Boolean) || "";
+    primary.source = buildSourceMetadata(primary.source || "TikTok页面实时同步", primary.creatorAvatar, primary.sourcePosition);
+    return primary;
+  }
+
+  function dedupeApplicationRecords(records) {
+    const groups = new Map();
+    records.forEach((record, index) => {
+      const key = applicationKey(record) || `record:${record.id || index}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(record);
+    });
+    return [...groups.values()]
+      .map(mergeDuplicateApplication)
+      .sort(compareApplicationTimeDesc);
   }
 
   function creatorAvatarFor(record) {
@@ -1901,7 +1975,9 @@ window.SEED_DATA = {
   }
 
   function recordKey(record) {
-    return [cleanHandle(record.creatorId), record.productId, record.sku, record.campaignId].map((value) => String(value || "").trim().toLowerCase()).join("|");
+    const creator = cleanHandle(record.creatorId).toLowerCase();
+    const productId = String(record.productId || "").trim();
+    return creator && productId ? `${creator}|${productId}` : "";
   }
 
   function mergeNonEmpty(existing, incoming) {
@@ -2375,18 +2451,16 @@ window.SEED_DATA = {
       existing = byId.data;
     }
 
-    if (!existing) {
-      const byKey = await collab
+    if (!existing && payload.creator_id && payload.product_id) {
+      const { data: candidates, error } = await collab
         .from("records")
-        .select("id")
-        .eq("creator_id", payload.creator_id || "")
-        .eq("product_id", payload.product_id || "")
-        .eq("sku", payload.sku || "")
-        .eq("campaign_id", payload.campaign_id || "")
-        .limit(1)
-        .maybeSingle();
-      if (byKey.error) throw byKey.error;
-      existing = byKey.data;
+        .select("id, creator_id")
+        .eq("product_id", payload.product_id)
+        .limit(100);
+      if (error) throw error;
+      existing = (candidates || []).find((item) =>
+        String(item.creator_id || "").trim().toLowerCase() === payload.creator_id.trim().toLowerCase()
+      ) || null;
     }
 
     if (existing) {
