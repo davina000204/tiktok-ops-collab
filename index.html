@@ -397,7 +397,7 @@ body.is-viewer .read-only-note { display:block; }
           <div class="table-title">
             <div>
               <h2>待审核样品申请</h2>
-              <p>TikTok 页面数据实时同步；同一达人 + 商品 PID 自动合并为一条，异常字段进入待核实。</p>
+              <p>TikTok 页面数据实时同步；同一达人 + 商品 PID 自动合并为一条，并按申请时间从近到远排列。</p>
             </div>
             <span class="count-chip" id="sample-count-label">0 条</span>
           </div>
@@ -1199,6 +1199,15 @@ window.SEED_DATA = {
     return 2;
   }
 
+  function applicationTimestamp(record) {
+    const values = [record.appliedAt, record.createdAt, record.updatedAt];
+    for (const value of values) {
+      const parsed = Date.parse(value || "");
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return 0;
+  }
+
   function compareApplicationTimeDesc(a, b) {
     const priorityCompare = reviewPriority(a) - reviewPriority(b);
     if (priorityCompare) return priorityCompare;
@@ -1206,21 +1215,15 @@ window.SEED_DATA = {
     const dateCompare = String(b.date || "").localeCompare(String(a.date || ""));
     if (dateCompare) return dateCompare;
 
-    const aPosition = Number(a.sourcePosition);
-    const bPosition = Number(b.sourcePosition);
+    const timeCompare = applicationTimestamp(b) - applicationTimestamp(a);
+    if (timeCompare) return timeCompare;
+
+    const aPosition = a.sourcePosition === "" || a.sourcePosition == null ? null : Number(a.sourcePosition);
+    const bPosition = b.sourcePosition === "" || b.sourcePosition == null ? null : Number(b.sourcePosition);
     if (Number.isFinite(aPosition) && Number.isFinite(bPosition) && aPosition !== bPosition) {
       return aPosition - bPosition;
     }
-
-    const timestamp = (record) => {
-      const values = [record.appliedAt, record.createdAt, record.updatedAt];
-      for (const value of values) {
-        const parsed = Date.parse(value || "");
-        if (Number.isFinite(parsed)) return parsed;
-      }
-      return 0;
-    };
-    return timestamp(b) - timestamp(a);
+    return 0;
   }
 
   function filteredSamples() {
