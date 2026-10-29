@@ -1240,6 +1240,22 @@ window.SEED_DATA = {
     return /^https?:\/\//i.test(url) ? url : "";
   }
 
+  function creatorAvatarFor(record) {
+    const direct = safeAvatarUrl(record.creatorAvatar);
+    if (direct) return direct;
+    const handle = cleanHandle(record.creatorId).toLowerCase();
+    if (!handle) return "";
+    const base = handle.replace(/\.+$/, "");
+    if (base.length < 5) return "";
+    const candidate = state.records.find((item) => {
+      const avatar = safeAvatarUrl(item.creatorAvatar);
+      if (!avatar) return false;
+      const other = cleanHandle(item.creatorId).toLowerCase().replace(/\.+$/, "");
+      return other === base || other.startsWith(base) || base.startsWith(other);
+    });
+    return safeAvatarUrl(candidate?.creatorAvatar);
+  }
+
   function creatorInitial(record) {
     const label = String(record.creatorName || cleanHandle(record.creatorId) || "?")
       .replace(/^@/, "").trim();
@@ -1247,7 +1263,7 @@ window.SEED_DATA = {
   }
 
   function renderCreatorCell(record) {
-    const avatar = safeAvatarUrl(record.creatorAvatar);
+    const avatar = creatorAvatarFor(record);
     return `<div class="creator-cell">
       <span class="creator-avatar" aria-hidden="true"><span>${escapeHtml(creatorInitial(record))}</span>${avatar ? `<img src="${escapeAttr(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}</span>
       <span class="creator-copy"><strong>${escapeHtml(displayCreator(record))}</strong><small>${escapeHtml(record.creatorName || "达人昵称未填")}</small></span>
