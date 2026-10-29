@@ -115,11 +115,12 @@ table { width: 100%; border-collapse: collapse; min-width: 920px; }
 th { text-align: left; font-size: 10px; letter-spacing: .7px; text-transform: uppercase; color: #81908a; background: #f8faf9; padding: 12px 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; }
 td { padding: 14px 16px; border-bottom: 1px solid #edf0ee; vertical-align: middle; font-size: 12px; }
 tbody tr:hover { background: #fbfdfc; }
-.creator-cell { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.creator-cell { display: flex; align-items: center; gap: 10px; min-width: 210px; }
 .creator-avatar { position: relative; flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: linear-gradient(145deg, #dff4ee, #b9e4d9); color: var(--teal-dark); font-size: 13px; font-weight: 850; box-shadow: inset 0 0 0 1px rgba(10,95,75,.08); }
 .creator-avatar > span { position: relative; z-index: 0; }
 .creator-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; background: #eef4f2; }
-.creator-copy { min-width: 0; }
+.creator-copy { min-width: 0; max-width: 230px; }
+.creator-copy strong { white-space: nowrap; }
 .creator-copy strong, .creator-copy small { overflow: hidden; text-overflow: ellipsis; }
 td strong { display: block; font-size: 13px; margin-bottom: 3px; }
 td small { display: block; color: var(--muted); line-height: 1.4; max-width: 300px; }
@@ -1090,6 +1091,7 @@ window.SEED_DATA = {
   }
 
   function renderAll() {
+    resolveCreatorAliases(state.records);
     renderCounts();
     renderOverview();
     renderSamples();
@@ -1240,6 +1242,27 @@ window.SEED_DATA = {
     return /^https?:\/\//i.test(url) ? url : "";
   }
 
+  function resolveCreatorAliases(records) {
+    const fullRecords = records.filter((record) => {
+      const handle = cleanHandle(record.creatorId);
+      return handle && !handle.endsWith("...");
+    });
+    const fullHandles = [...new Set(fullRecords.map((record) => cleanHandle(record.creatorId)))];
+    for (const record of records) {
+      const handle = cleanHandle(record.creatorId);
+      if (!handle.endsWith("...")) continue;
+      const prefix = handle.slice(0, -3).toLowerCase();
+      let matches = fullHandles.filter((candidate) => candidate.toLowerCase().startsWith(prefix));
+      if (matches.length !== 1 && record.creatorAvatar) {
+        matches = [...new Set(fullRecords
+          .filter((candidate) => safeAvatarUrl(candidate.creatorAvatar) === safeAvatarUrl(record.creatorAvatar))
+          .map((candidate) => cleanHandle(candidate.creatorId))
+          .filter((candidate) => candidate && candidate.toLowerCase().startsWith(prefix)))];
+      }
+      if (matches.length === 1) record.creatorId = matches[0];
+    }
+  }
+
   function creatorAvatarFor(record) {
     const direct = safeAvatarUrl(record.creatorAvatar);
     if (direct) return direct;
@@ -1264,9 +1287,11 @@ window.SEED_DATA = {
 
   function renderCreatorCell(record) {
     const avatar = creatorAvatarFor(record);
-    return `<div class="creator-cell">
+    const handle = displayCreator(record);
+    const nickname = record.creatorName || "达人昵称未填";
+    return `<div class="creator-cell" title="${escapeAttr(`${handle} · ${nickname}`)}">
       <span class="creator-avatar" aria-hidden="true"><span>${escapeHtml(creatorInitial(record))}</span>${avatar ? `<img src="${escapeAttr(avatar)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}</span>
-      <span class="creator-copy"><strong>${escapeHtml(displayCreator(record))}</strong><small>${escapeHtml(record.creatorName || "达人昵称未填")}</small></span>
+      <span class="creator-copy"><strong title="${escapeAttr(handle)}">${escapeHtml(handle)}</strong><small title="${escapeAttr(nickname)}">${escapeHtml(nickname)}</small></span>
     </div>`;
   }
 
