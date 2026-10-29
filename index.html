@@ -872,6 +872,7 @@ window.SEED_DATA = {
   let cloudChannel = null;
   let cloudLoading = false;
   let pendingTimer = null;
+  let membershipTimer = null;
   const FEISHU_HEADERS = [
     "日期", "达人id", "申请方式", "地址/备注", "产品图片", "产品id", "bd",
     "是否同意", "拍摄日期", "视频链接", "vid", "code", "当前状态",
@@ -1881,7 +1882,9 @@ window.SEED_DATA = {
     cloudSession = null;
     cloudMembership = null;
     clearInterval(pendingTimer);
+    clearInterval(membershipTimer);
     pendingTimer = null;
+    membershipTimer = null;
     document.body.classList.add("auth-locked");
     $("#auth-screen").hidden = false;
     $("#pending-screen").hidden = true;
@@ -1972,6 +1975,8 @@ window.SEED_DATA = {
     cloudMembership = membership;
     clearInterval(pendingTimer);
     pendingTimer = null;
+    clearInterval(membershipTimer);
+    membershipTimer = setInterval(() => refreshMyMembership().catch((error) => console.warn(error)), 10000);
     const { data: profile } = await collab
       .from("profiles")
       .select("display_name, email")
