@@ -51,6 +51,8 @@ button { cursor: pointer; }
 .eyebrow { margin: 0 0 7px; color: var(--teal-dark); font-size: 10px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; }
 .topbar h1 { margin: 0; font-size: 30px; letter-spacing: -.8px; }
 .top-actions { display: flex; gap: 10px; align-items: center; }
+.realtime-pill { padding: 7px 10px; border-radius: 999px; background: var(--teal-soft); color: var(--teal-dark); font-size: 11px; font-weight: 750; white-space: nowrap; }
+.realtime-pill.stale { background: var(--amber-soft); color: var(--amber); }
 .button { border: 1px solid transparent; border-radius: 10px; min-height: 39px; padding: 0 16px; font-weight: 700; transition: .16s ease; white-space: nowrap; }
 .button:hover { transform: translateY(-1px); }
 .button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
@@ -295,6 +297,7 @@ body.is-viewer .read-only-note { display:block; }
           <h1 id="view-title">经营总览</h1>
         </div>
         <div class="top-actions">
+          <span class="realtime-pill" id="realtime-sync-status">TikTok 实时同步：等待中</span>
           <div class="user-chip" id="user-chip"><span class="user-avatar" id="user-avatar">U</span><span id="user-email">未登录</span><b id="user-role">--</b></div>
           <button class="button subtle" id="signout-btn">退出</button>
           <button class="button subtle" id="export-csv-btn">导出飞书 CSV</button>
@@ -387,7 +390,7 @@ body.is-viewer .read-only-note { display:block; }
           <div class="table-title">
             <div>
               <h2>待审核样品申请</h2>
-              <p>截图自动导入后只进入待审核，不会自动批准寄样；勾选后可批量处理。</p>
+              <p>TikTok 页面数据实时同步；异常字段进入待核实，勾选后可批量处理。</p>
             </div>
             <span class="count-chip" id="sample-count-label">0 条</span>
           </div>
@@ -1105,6 +1108,20 @@ window.SEED_DATA = {
     const handoff = state.records.filter(isHandoffReady);
     const anomalies = state.records.filter((record) => getAnomalies(record).length);
     const healthy = state.records.length ? Math.max(0, Math.round((1 - anomalies.length / state.records.length) * 100)) : 100;
+    const realtimeRecords = state.records
+      .filter((record) => String(record.source || "").includes("TikTok页面实时同步") && record.updatedAt)
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    const realtimeLabel = $("#realtime-sync-status");
+    if (realtimeLabel) {
+      if (realtimeRecords.length) {
+        const last = new Date(realtimeRecords[0].updatedAt);
+        realtimeLabel.textContent = `TikTok 实时同步：${last.toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}`;
+        realtimeLabel.classList.remove("stale");
+      } else {
+        realtimeLabel.textContent = "TikTok 实时同步：等待首次数据";
+        realtimeLabel.classList.add("stale");
+      }
+    }
 
     $("#kpi-pending").textContent = pending.length;
     $("#kpi-code").textContent = waitingCode.length;
