@@ -1208,6 +1208,14 @@ window.SEED_DATA = {
     return 0;
   }
 
+  function snapshotTimestamp(record) {
+    const explicit = Date.parse(record.sourceSyncedAt || "");
+    if (Number.isFinite(explicit)) return explicit;
+    const hasSnapshotPosition = record.sourcePosition !== "" && record.sourcePosition != null;
+    const fallback = hasSnapshotPosition ? Date.parse(record.updatedAt || "") : NaN;
+    return Number.isFinite(fallback) ? fallback : 0;
+  }
+
   function compareApplicationTimeDesc(a, b) {
     const priorityCompare = reviewPriority(a) - reviewPriority(b);
     if (priorityCompare) return priorityCompare;
@@ -1215,15 +1223,16 @@ window.SEED_DATA = {
     const dateCompare = String(b.date || "").localeCompare(String(a.date || ""));
     if (dateCompare) return dateCompare;
 
-    const timeCompare = applicationTimestamp(b) - applicationTimestamp(a);
-    if (timeCompare) return timeCompare;
+    const snapshotCompare = snapshotTimestamp(b) - snapshotTimestamp(a);
+    if (snapshotCompare) return snapshotCompare;
 
     const aPosition = a.sourcePosition === "" || a.sourcePosition == null ? null : Number(a.sourcePosition);
     const bPosition = b.sourcePosition === "" || b.sourcePosition == null ? null : Number(b.sourcePosition);
     if (Number.isFinite(aPosition) && Number.isFinite(bPosition) && aPosition !== bPosition) {
       return aPosition - bPosition;
     }
-    return 0;
+
+    return applicationTimestamp(b) - applicationTimestamp(a);
   }
 
   function filteredSamples() {
@@ -1310,7 +1319,7 @@ window.SEED_DATA = {
 
     for (const duplicate of ordered.slice(1)) {
       Object.entries(duplicate).forEach(([key, value]) => {
-        if (["id", "status", "date", "appliedAt", "createdAt", "updatedAt", "source"].includes(key)) return;
+        if (["id", "status", "date", "appliedAt", "createdAt", "updatedAt", "source", "sourceSyncedAt"].includes(key)) return;
         if (!isFilled(primary[key]) && isFilled(value)) primary[key] = value;
       });
       for (const field of ["creatorName", "productName", "sku", "campaignName", "note"]) {
@@ -1332,8 +1341,14 @@ window.SEED_DATA = {
       .filter(Number.isFinite);
     if (timestamps.length) primary.updatedAt = new Date(Math.max(...timestamps)).toISOString();
 
+    const syncedTimestamps = ordered
+      .map((record) => record.sourceSyncedAt || "")
+      .map((value) => Date.parse(value))
+      .filter(Number.isFinite);
+    if (syncedTimestamps.length) primary.sourceSyncedAt = new Date(Math.max(...syncedTimestamps)).toISOString();
+
     primary.creatorAvatar = ordered.map((record) => safeAvatarUrl(record.creatorAvatar)).find(Boolean) || "";
-    primary.source = buildSourceMetadata(primary.source || "TikTok页面实时同步", primary.creatorAvatar, primary.sourcePosition);
+    primary.source = buildSourceMetadata(primary.source || "TikTok页面实时同步", primary.creatorAvatar, primary.sourcePosition, primary.sourceSyncedAt);
     return primary;
   }
 
@@ -1864,6 +1879,7 @@ window.SEED_DATA = {
     const parts = String(value || "").split("|");
     let avatar = "";
     let sourcePosition = null;
+    let syncedAt = "";
     const sourceParts = [];
     for (const part of parts) {
       if (part.startsWith("avatar=")) {
@@ -1871,20 +1887,24 @@ window.SEED_DATA = {
       } else if (part.startsWith("position=")) {
         const parsed = Number(part.slice(9));
         if (Number.isFinite(parsed)) sourcePosition = parsed;
+      } else if (part.startsWith("syncedAt=")) {
+        try { syncedAt = decodeURIComponent(part.slice(9)); } catch { syncedAt = part.slice(9); }
       } else if (part) {
         sourceParts.push(part);
       }
     }
-    return { source: sourceParts.join("|") || "导入", creatorAvatar: avatar, sourcePosition };
+    return { source: sourceParts.join("|") || "导入", creatorAvatar: avatar, sourcePosition, syncedAt };
   }
 
-  function buildSourceMetadata(source, creatorAvatar, sourcePosition) {
-    const base = parseSourceMetadata(source).source;
-    const parts = [base];
-    const position = Number(sourcePosition);
+  function buildSourceMetadata(source, creatorAvatar, sourcePosition, syncedAt = "") {
+    const metadata = parseSourceMetadata(source);
+    const parts = [metadata.source];
+    const position = sourcePosition === "" || sourcePosition == null ? NaN : Number(sourcePosition);
     if (Number.isFinite(position)) parts.push(`position=${position}`);
     const avatar = safeAvatarUrl(creatorAvatar);
     if (avatar) parts.push(`avatar=${encodeURIComponent(avatar)}`);
+    const snapshot = String(syncedAt || metadata.syncedAt || "").trim();
+    if (snapshot) parts.push(`syncedAt=${encodeURIComponent(snapshot)}`);
     return parts.join("|");
   }
 
@@ -1925,6 +1945,7 @@ window.SEED_DATA = {
       showcase: normalizeYesNo(raw.showcase || raw["商品在达人橱窗"] || ""),
       source: sourceMeta.source,
       sourcePosition: Number.isFinite(sourcePosition) ? sourcePosition : null,
+      sourceSyncedAt: String(raw.sourceSyncedAt || sourceMeta.syncedAt || "").trim(),
       appliedAt: String(raw.appliedAt || raw["申请时间"] || "").trim(),
       createdAt: raw.createdAt || "",
       updatedAt: raw.updatedAt || new Date().toISOString()
@@ -2439,7 +2460,7 @@ window.SEED_DATA = {
       code_status: record.codeStatus || "未请求",
       campaign_id: record.campaignId || "",
       showcase: record.showcase || "",
-      source: buildSourceMetadata(record.source || "cloud", record.creatorAvatar, record.sourcePosition)
+      source: buildSourceMetadata(record.source || "cloud", record.creatorAvatar, record.sourcePosition, record.sourceSyncedAt)
     };
   }
 
