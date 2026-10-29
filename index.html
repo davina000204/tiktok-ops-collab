@@ -1192,7 +1192,16 @@ window.SEED_DATA = {
     </div>`;
   }
 
+  function reviewPriority(record) {
+    if (record.status === "待审核") return 0;
+    if (record.status === "待补全") return 1;
+    return 2;
+  }
+
   function compareApplicationTimeDesc(a, b) {
+    const priorityCompare = reviewPriority(a) - reviewPriority(b);
+    if (priorityCompare) return priorityCompare;
+
     const dateCompare = String(b.date || "").localeCompare(String(a.date || ""));
     if (dateCompare) return dateCompare;
 
