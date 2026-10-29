@@ -369,6 +369,9 @@ body.is-viewer .read-only-note { display:block; }
             <option value="待审核">待审核</option>
             <option value="待补全">待补全</option>
             <option value="待拍摄">待拍摄</option>
+            <option value="已发货">已发货</option>
+            <option value="已过期">已过期</option>
+            <option value="已取消">已取消</option>
             <option value="已拒绝">已拒绝</option>
           </select>
           <button class="button subtle" id="sample-export-btn">导出当前列表</button>
@@ -392,6 +395,8 @@ body.is-viewer .read-only-note { display:block; }
             <option value="">全部状态</option>
             <option value="待索要Code">待索要Code</option>
             <option value="Code已收到">Code已收到</option>
+            <option value="内容处理中">内容处理中</option>
+            <option value="已完成">已完成</option>
             <option value="待投放">待投放</option>
             <option value="已投放">已投放</option>
           </select>
@@ -533,10 +538,14 @@ body.is-viewer .read-only-note { display:block; }
         <label>产品 ID<input id="field-product-id" inputmode="numeric"></label>
         <label>SKU<input id="field-sku"></label>
         <label class="span-2">产品名称<input id="field-product-name"></label>
+        <label>可售样品数<input id="field-available-samples" type="number" min="0"></label>
+        <label>库存<input id="field-product-stock" type="number" min="0"></label>
+        <label>剩余申请时间<input id="field-remaining-days" placeholder="例如 4天"></label>
+        <label>活动名称<input id="field-campaign-name"></label>
         <label>申请方式<input id="field-method" value="线上申请"></label>
         <label>BD<input id="field-bd"></label>
         <label>是否同意<select id="field-approved"><option value="">未决定</option><option value="是">是</option><option value="否">否</option></select></label>
-        <label>当前状态<select id="field-status"><option>待审核</option><option>待补全</option><option>待拍摄</option><option>待索要Code</option><option>Code已收到</option><option>待投放</option><option>已投放</option><option>已拒绝</option></select></label>
+        <label>当前状态<select id="field-status"><option>待审核</option><option>待补全</option><option>待拍摄</option><option>已发货</option><option>内容处理中</option><option>已完成</option><option>待索要Code</option><option>Code已收到</option><option>待投放</option><option>已投放</option><option>已过期</option><option>已取消</option><option>已拒绝</option></select></label>
         <label class="span-2">视频链接<input id="field-video-url" placeholder="https://www.tiktok.com/@creator/video/123"></label>
         <label>vid<input id="field-vid"></label>
         <label>Code<input id="field-code"></label>
@@ -889,8 +898,8 @@ window.SEED_DATA = {
   };
 
   const STATUS_OPTIONS = [
-    "待审核", "待补全", "待拍摄", "待索要Code", "Code已收到",
-    "待投放", "已投放", "已拒绝"
+    "待审核", "待补全", "待拍摄", "已发货", "内容处理中", "已完成",
+    "待索要Code", "Code已收到", "待投放", "已投放", "已过期", "已取消", "已拒绝"
   ];
 
   let state;
@@ -1055,7 +1064,7 @@ window.SEED_DATA = {
 
   function renderCounts() {
     const samples = state.records.filter((record) => record.type === "sample" && ["待审核", "待补全"].includes(record.status));
-    const videos = state.records.filter((record) => record.type === "video" && ["待索要Code", "Code已收到", "待投放"].includes(record.status));
+    const videos = state.records.filter((record) => record.type === "video" && !["已投放", "已取消", "已过期"].includes(record.status));
     const handoff = state.records.filter(isHandoffReady);
     $("#nav-sample-count").textContent = samples.length;
     $("#nav-video-count").textContent = videos.length;
@@ -1105,9 +1114,9 @@ window.SEED_DATA = {
 
     const stages = [
       ["待审核", state.records.filter((record) => record.type === "sample" && ["待审核", "待补全"].includes(record.status)).length, "补充达人信息"],
-      ["待拍摄", state.records.filter((record) => record.status === "待拍摄").length, "等待内容交付"],
-      ["已完成", state.records.filter((record) => record.type === "video" && record.codeStatus !== "已收到").length, "索要推广 Code"],
-      ["待投放", state.records.filter((record) => record.status === "待投放").length, "交接给商家"],
+      ["已发货", state.records.filter((record) => ["待拍摄", "已发货"].includes(record.status)).length, "等待内容交付"],
+      ["内容处理中", state.records.filter((record) => record.status === "内容处理中").length, "等待达人交付"],
+      ["待投放", state.records.filter((record) => ["已完成", "待索要Code", "Code已收到", "待投放"].includes(record.status)).length, "Code与商家交接"],
       ["已投放", state.records.filter((record) => record.status === "已投放").length, "进入效果复盘"]
     ];
     $("#pipeline").innerHTML = stages.map(([label, count, sub], index) => `
@@ -1164,7 +1173,7 @@ window.SEED_DATA = {
       return `<tr>
         <td class="mono">${escapeHtml(record.date || "—")}</td>
         <td><strong>${escapeHtml(displayCreator(record))}</strong><small>${escapeHtml(record.creatorName || "达人昵称未填")}</small></td>
-        <td><strong>${escapeHtml(record.productName || "未匹配产品")}</strong><small>${escapeHtml(record.productId || "缺少商品 ID")}</small></td>
+        <td><strong>${escapeHtml(record.productName || "未匹配产品")}</strong><small>${escapeHtml(record.productId || "缺少商品 ID")}</small><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
         <td><span class="mono">${escapeHtml(record.productId || "—")}</span><small>${escapeHtml(record.sku || "—")}</small></td>
         <td>${escapeHtml(record.bd || "—")}</td>
         <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(record.status)}</span>${anomalies.length ? `<small>${escapeHtml(anomalies[0])}</small>` : ""}</td>
@@ -1186,7 +1195,7 @@ window.SEED_DATA = {
       const link = record.videoUrl ? `<a class="link" href="${escapeAttr(record.videoUrl)}" target="_blank" rel="noreferrer">打开视频</a>` : `<span class="status-badge error">待补链接</span>`;
       return `<tr>
         <td><strong>@${escapeHtml(cleanHandle(record.creatorId) || "待补全")}</strong><small>${escapeHtml(record.creatorName || "")}${record.followers ? ` · ${formatNumber(record.followers)} 粉丝` : ""}</small></td>
-        <td><strong>${escapeHtml(record.productName || "未匹配产品")}</strong><small>${escapeHtml(record.productId || "")}</small></td>
+        <td><strong>${escapeHtml(record.productName || "未匹配产品")}</strong><small>${escapeHtml(record.productId || "")}</small><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
         <td>${link}<small class="mono">${escapeHtml(record.vid || "—")}</small></td>
         <td><span class="mono">${escapeHtml(maskCode(record.code))}</span><small>${escapeHtml(record.codeStatus || "未请求")}</small></td>
         <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(record.status)}</span></td>
@@ -1231,6 +1240,10 @@ window.SEED_DATA = {
     $("#field-product-id").value = record?.productId || "";
     $("#field-sku").value = record?.sku || "";
     $("#field-product-name").value = record?.productName || "";
+    $("#field-available-samples").value = record?.availableSamples ?? "";
+    $("#field-product-stock").value = record?.productStock ?? "";
+    $("#field-remaining-days").value = record?.remainingDays || "";
+    $("#field-campaign-name").value = record?.campaignName || "";
     $("#field-method").value = record?.applicationMethod || "线上申请";
     $("#field-bd").value = record?.bd || state.settings.defaultBd || "";
     $("#field-approved").value = record?.approved || "";
@@ -1285,6 +1298,10 @@ window.SEED_DATA = {
       productId: $("#field-product-id").value,
       sku: $("#field-sku").value,
       productName: $("#field-product-name").value,
+      availableSamples: $("#field-available-samples").value,
+      productStock: $("#field-product-stock").value,
+      remainingDays: $("#field-remaining-days").value,
+      campaignName: $("#field-campaign-name").value,
       applicationMethod: $("#field-method").value,
       bd: $("#field-bd").value,
       approved: $("#field-approved").value,
@@ -1581,6 +1598,10 @@ window.SEED_DATA = {
       creatorId: cleanHandle(raw.creatorId || raw["达人id"] || raw["达人ID"] || raw["达人用户名"] || ""),
       creatorName: String(raw.creatorName || raw["达人昵称"] || "").trim(),
       followers: raw.followers || raw["粉丝数"] || "",
+      availableSamples: raw.availableSamples ?? raw["可售样品数"] ?? "",
+      productStock: raw.productStock ?? raw["库存"] ?? "",
+      remainingDays: String(raw.remainingDays || raw["剩余申请时间"] || "").trim(),
+      campaignName: String(raw.campaignName || raw["活动名称"] || "").trim(),
       applicationMethod: String(raw.applicationMethod || raw["申请方式"] || "线上申请").trim(),
       note: String(raw.note || raw["地址/备注"] || raw["备注"] || "").trim(),
       productImage: String(raw.productImage || raw["产品图片"] || "").trim(),
@@ -1735,10 +1756,10 @@ window.SEED_DATA = {
 
   function statusClass(status) {
     if (["待审核", "待补全"].includes(status)) return "waiting";
-    if (["待索要Code", "已请求"].includes(status)) return "waiting";
-    if (["Code已收到", "待投放"].includes(status)) return "ready";
-    if (["待拍摄", "已投放"].includes(status)) return "done";
-    if (["已拒绝"].includes(status)) return "error";
+    if (["待索要Code", "已请求", "内容处理中"].includes(status)) return "waiting";
+    if (["已发货", "Code已收到", "待投放"].includes(status)) return "ready";
+    if (["待拍摄", "已完成", "已投放"].includes(status)) return "done";
+    if (["已拒绝", "已过期", "已取消"].includes(status)) return "error";
     return "";
   }
 
@@ -2052,6 +2073,10 @@ window.SEED_DATA = {
       creatorId: row.creator_id || "",
       creatorName: row.creator_name || "",
       followers: row.followers ?? "",
+      availableSamples: row.available_samples ?? "",
+      productStock: row.product_stock ?? "",
+      remainingDays: row.remaining_days || "",
+      campaignName: row.campaign_name || "",
       applicationMethod: row.application_method || "",
       note: row.note || "",
       productImage: row.product_image || "",
@@ -2082,6 +2107,10 @@ window.SEED_DATA = {
       creator_id: cleanHandle(record.creatorId),
       creator_name: record.creatorName || "",
       followers: Number.isFinite(followers) ? followers : null,
+      available_samples: record.availableSamples === "" || record.availableSamples == null ? null : Number(record.availableSamples),
+      product_stock: record.productStock === "" || record.productStock == null ? null : Number(record.productStock),
+      remaining_days: record.remainingDays || "",
+      campaign_name: record.campaignName || "",
       application_method: record.applicationMethod || "线上申请",
       note: record.note || "",
       product_image: record.productImage || "",
