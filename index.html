@@ -36,8 +36,9 @@ button { cursor: pointer; }
 .brand-mark { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; font-weight: 900; font-size: 21px; color: #10241f; background: linear-gradient(145deg, var(--lime), #8fe5c3); box-shadow: 0 8px 20px rgba(143, 229, 195, .2); }
 .brand-block strong { display: block; font-size: 16px; letter-spacing: .1px; }
 .brand-block span { display: block; color: #8fa49d; font-size: 11px; margin-top: 3px; }
-.main-nav { display: grid; gap: 7px; }
-.nav-item { width: 100%; border: 0; background: transparent; color: #a9bbb5; padding: 12px 13px; border-radius: 11px; display: flex; align-items: center; gap: 11px; text-align: left; transition: .18s ease; }
+.main-nav { display: grid; gap: 5px; overflow-y: auto; min-height: 0; padding-right: 2px; }
+.nav-section-label { margin: 12px 12px 3px; color: #6f8780; font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.nav-item { width: 100%; border: 0; background: transparent; color: #a9bbb5; padding: 10px 13px; border-radius: 11px; display: flex; align-items: center; gap: 11px; text-align: left; transition: .18s ease; }
 .nav-item:hover { color: #fff; background: rgba(255,255,255,.05); }
 .nav-item.active { color: #fff; background: var(--sidebar-soft); box-shadow: inset 3px 0 0 var(--lime); }
 .nav-item span { width: 18px; color: #8ddfc1; text-align: center; }
@@ -281,9 +282,15 @@ body.is-viewer .read-only-note { display:block; }
 
       <nav class="main-nav" aria-label="主导航">
         <button class="nav-item active" data-view="overview"><span>◫</span> 总览</button>
-        <button class="nav-item" data-view="samples"><span>◉</span> 待审核样品 <b id="nav-sample-count">0</b></button>
-        <button class="nav-item" data-view="videos"><span>▶</span> 视频与 Code <b id="nav-video-count">0</b></button>
-        <button class="nav-item" data-view="handoff"><span>⇥</span> 商家交接 <b id="nav-handoff-count">0</b></button>
+        <div class="nav-section-label">申请状态</div>
+        <button class="nav-item" data-view="samples" data-status-filter=""><span>◎</span> 全部 <b id="nav-all-count">0</b></button>
+        <button class="nav-item" data-view="samples" data-status-filter="__to_review__"><span>◉</span> 待审核 <b id="nav-review-count">0</b></button>
+        <button class="nav-item" data-view="samples" data-status-filter="待拍摄"><span>□</span> 待发货 <b id="nav-ready-count">0</b></button>
+        <button class="nav-item" data-view="samples" data-status-filter="已发货"><span>▣</span> 已发货 <b id="nav-shipped-count">0</b></button>
+        <button class="nav-item" data-view="samples" data-status-filter="内容处理中"><span>▶</span> 内容处理中 <b id="nav-content-count">0</b></button>
+        <button class="nav-item" data-view="samples" data-status-filter="已完成"><span>✓</span> 已完成 <b id="nav-completed-count">0</b></button>
+        <button class="nav-item" data-view="samples" data-status-filter="__canceled__"><span>×</span> 已取消 <b id="nav-canceled-count">0</b></button>
+        <div class="nav-section-label">管理</div>
         <button class="nav-item" data-view="data"><span>⇄</span> 数据导入导出</button>
         <button class="nav-item admin-only" data-view="members" id="members-nav"><span>♙</span> 成员权限</button>
       </nav>
@@ -377,17 +384,16 @@ body.is-viewer .read-only-note { display:block; }
 
       <section class="view" id="view-samples">
         <div class="toolbar">
-          <div class="search-wrap"><span>⌕</span><input id="sample-search" placeholder="搜索达人、产品、商品ID"></div>
+          <div class="search-wrap"><span>⌕</span><input id="sample-search" placeholder="搜索达人、品牌、商品ID"></div>
           <select id="sample-status-filter">
-            <option value="">全部状态</option>
-            <option value="__review__">待核实 / OCR 异常</option>
-            <option value="待审核">待审核</option>
-            <option value="待补全">待补全</option>
-            <option value="待拍摄">待拍摄</option>
+            <option value="">全部</option>
+            <option value="__to_review__">待审核</option>
+            <option value="待拍摄">待发货</option>
             <option value="已发货">已发货</option>
-            <option value="已过期">已过期</option>
-            <option value="已取消">已取消</option>
-            <option value="已拒绝">已拒绝</option>
+            <option value="内容处理中">内容处理中</option>
+            <option value="已完成">已完成</option>
+            <option value="__canceled__">已取消</option>
+            <option value="__review__">待核实 / OCR 异常</option>
           </select>
           <button class="button subtle" id="sample-export-btn">导出当前列表</button>
           <button class="button primary edit-only" id="batch-approve-btn" disabled>批量通过 <span id="selected-sample-count">0</span></button>
@@ -396,8 +402,8 @@ body.is-viewer .read-only-note { display:block; }
         <article class="panel table-panel">
           <div class="table-title">
             <div>
-              <h2>待审核样品申请</h2>
-              <p>TikTok 页面数据实时同步；同一达人 + 商品 PID 自动合并为一条，并按申请时间从近到远排列。</p>
+              <h2 id="records-title">全部申请</h2>
+              <p id="records-description">按申请时间从近到远排列；同一达人 + 商品 PID 自动合并为一条。</p>
             </div>
             <span class="count-chip" id="sample-count-label">0 条</span>
           </div>
@@ -939,11 +945,22 @@ window.SEED_DATA = {
 
   const VIEW_TITLES = {
     overview: "经营总览",
-    samples: "待审核样品",
+    samples: "全部申请",
     videos: "视频与 Code",
     handoff: "商家交接",
     data: "数据导入导出",
     members: "成员权限"
+  };
+
+  const RECORD_FILTER_META = {
+    "": { title: "全部申请", description: "按申请时间从近到远排列；同一达人 + 商品 PID 自动合并为一条。" },
+    "__to_review__": { title: "待审核申请", description: "包含待审核和待补全申请，按申请时间从近到远排列。" },
+    "待拍摄": { title: "待发货申请", description: "审核通过、等待寄样的达人申请。" },
+    "已发货": { title: "已发货申请", description: "样品已寄出，等待达人交付内容。" },
+    "内容处理中": { title: "内容处理中", description: "达人正在拍摄或制作内容。" },
+    "已完成": { title: "已完成申请", description: "TikTok 后台已完成全部流程的达人记录。" },
+    "__canceled__": { title: "已取消申请", description: "包含已取消、已拒绝和已过期的申请。" },
+    "__review__": { title: "待核实 / OCR 异常", description: "缺少关键字段或需要人工核实的记录。" }
   };
 
   const STATUS_OPTIONS = [
@@ -1026,7 +1043,13 @@ window.SEED_DATA = {
 
   function bindEvents() {
     $$(".nav-item").forEach((button) => {
-      button.addEventListener("click", () => switchView(button.dataset.view));
+      button.addEventListener("click", () => {
+        if (button.hasAttribute("data-status-filter")) {
+          const filter = $("#sample-status-filter");
+          if (filter) filter.value = button.dataset.statusFilter;
+        }
+        switchView(button.dataset.view);
+      });
     });
 
     document.body.addEventListener("click", handleDelegatedClick);
@@ -1116,15 +1139,22 @@ window.SEED_DATA = {
   function switchView(view) {
     if (!VIEW_TITLES[view]) return;
     currentView = view;
+    const statusFilter = $("#sample-status-filter")?.value || "";
+    const activeTitle = view === "samples"
+      ? (RECORD_FILTER_META[statusFilter]?.title || VIEW_TITLES[view])
+      : VIEW_TITLES[view];
     $$(".view").forEach((section) => section.classList.toggle("active", section.id === `view-${view}`));
-    $$(".nav-item").forEach((button) => button.classList.toggle("active", button.dataset.view === view));
-    $("#view-title").textContent = VIEW_TITLES[view];
+    $$(".nav-item").forEach((button) => {
+      const sameView = button.dataset.view === view;
+      const sameFilter = !button.hasAttribute("data-status-filter") || button.dataset.statusFilter === statusFilter;
+      button.classList.toggle("active", sameView && sameFilter);
+    });
+    $("#view-title").textContent = activeTitle;
     renderAll();
   }
 
   function renderAll() {
     resolveCreatorAliases(state.records);
-    state.records = recordsFromLatestFullSnapshot(state.records);
     state.records = dedupeApplicationRecords(state.records);
     renderCounts();
     renderOverview();
@@ -1136,12 +1166,19 @@ window.SEED_DATA = {
   }
 
   function renderCounts() {
-    const samples = state.records.filter((record) => record.type === "sample" && ["待审核", "待补全"].includes(record.status));
-    const videos = state.records.filter((record) => record.type === "video" && !["已投放", "已取消", "已过期"].includes(record.status));
-    const handoff = state.records.filter(isHandoffReady);
-    $("#nav-sample-count").textContent = samples.length;
-    $("#nav-video-count").textContent = videos.length;
-    $("#nav-handoff-count").textContent = handoff.length;
+    const counts = {
+      "nav-all-count": countRecordStatusFilter(""),
+      "nav-review-count": countRecordStatusFilter("__to_review__"),
+      "nav-ready-count": countRecordStatusFilter("待拍摄"),
+      "nav-shipped-count": countRecordStatusFilter("已发货"),
+      "nav-content-count": countRecordStatusFilter("内容处理中"),
+      "nav-completed-count": countRecordStatusFilter("已完成"),
+      "nav-canceled-count": countRecordStatusFilter("__canceled__")
+    };
+    Object.entries(counts).forEach(([id, count]) => {
+      const element = document.getElementById(id);
+      if (element) element.textContent = count;
+    });
   }
 
   function renderOverview() {
@@ -1274,16 +1311,24 @@ window.SEED_DATA = {
     return applicationTimestamp(b) - applicationTimestamp(a);
   }
 
+  function matchesRecordStatusFilter(record, statusFilter) {
+    const status = String(record.status || "");
+    if (!statusFilter) return true;
+    if (statusFilter === "__to_review__") return ["待审核", "待补全"].includes(status);
+    if (statusFilter === "__canceled__") return ["已取消", "已拒绝", "已过期"].includes(status);
+    if (statusFilter === "__review__") return getAnomalies(record).length > 0;
+    return status === statusFilter;
+  }
+
+  function countRecordStatusFilter(statusFilter) {
+    return state.records.filter((record) => matchesRecordStatusFilter(record, statusFilter)).length;
+  }
+
   function filteredSamples() {
     const query = ($("#sample-search")?.value || "").trim().toLowerCase();
     const status = $("#sample-status-filter")?.value || "";
     return state.records
-      .filter((record) => record.type === "sample")
-      .filter((record) => {
-        if (!status) return true;
-        if (status === "__review__") return getAnomalies(record).length > 0;
-        return record.status === status;
-      })
+      .filter((record) => matchesRecordStatusFilter(record, status))
       .filter((record) => matchesQuery(record, query))
       .sort(compareApplicationTimeDesc);
   }
@@ -1465,6 +1510,11 @@ window.SEED_DATA = {
 
   function renderSamples() {
     const records = filteredSamples();
+    const statusFilter = $("#sample-status-filter")?.value || "";
+    const filterMeta = RECORD_FILTER_META[statusFilter] || RECORD_FILTER_META[""];
+    if ($("#records-title")) $("#records-title").textContent = filterMeta.title;
+    if ($("#records-description")) $("#records-description").textContent = filterMeta.description;
+    if ($("#view-title") && currentView === "samples") $("#view-title").textContent = filterMeta.title;
     const canSelect = canEdit();
     const selectableIds = new Set(canSelect ? records.filter((record) => record.status === "待审核").map((record) => record.id) : []);
     selectedSampleIds = new Set([...selectedSampleIds].filter((id) => selectableIds.has(id)));
