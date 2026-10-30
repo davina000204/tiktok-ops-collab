@@ -75,12 +75,12 @@ https://davina000204.github.io/tiktok-ops-collab/
 
 ## v30 工作流增强
 
-- 今日待办中心：待审核、待 Code、待投放、异常四条主线
+- 今日待办中心：待审核、待 Code、Code 待发商家、异常四条主线
 - 视频批量勾选：批量复制摘要、批量复制 Code 话术、批量标记已请求
 - 同步健康面板：TikTok 快照、飞书云端同步、断线补查状态
 - 飞书云端函数：Supabase `feishu-sync` 每分钟自动执行，不依赖主电脑运行
 - 多视频完整保存
-- 商家任务卡批量复制
+- 商家 Code 批量一键复制（达人名称、视频链接、Code）
 - 今日运营简报一键复制
 - 在线 SOP：[manual.html](./manual.html)
 

@@ -366,10 +366,10 @@ body.is-viewer .read-only-note { display:block; }
             <button class="kpi-link" data-action="focus-queue" data-queue="code">批量跟进 →</button>
           </article>
           <article class="kpi-card">
-            <span>待商家投放</span>
+            <span>Code 待发商家</span>
             <strong id="kpi-handoff">0</strong>
-            <small>Code 已收到，等待交接</small>
-            <button class="kpi-link" data-action="focus-queue" data-queue="handoff">打开交接 →</button>
+            <small>Code 已收到，可一键复制</small>
+            <button class="kpi-link" data-action="focus-queue" data-queue="handoff">打开复制 →</button>
           </article>
           <article class="kpi-card warning">
             <span>数据异常</span>
@@ -490,10 +490,10 @@ body.is-viewer .read-only-note { display:block; }
         <article class="panel table-panel">
           <div class="table-title">
             <div>
-              <h2>商家投放交接</h2>
-              <p>Code 已收到后自动进入这里，生成可直接发送给商家的任务卡。</p>
+              <h2>商家 Code 交付</h2>
+              <p>Code 已收到后集中在这里；一键复制达人名称、视频链接和 Code 后发送给商家。</p>
             </div>
-            <div class="row-actions"><button class="button subtle" id="handoff-copy-all-btn">复制全部任务卡</button><button class="button subtle" id="handoff-export-btn">导出交接清单</button></div>
+            <div class="row-actions"><button class="button subtle" id="handoff-copy-all-btn">一键复制全部</button><button class="button subtle" id="handoff-export-btn">导出 Code 清单</button></div>
           </div>
           <div class="table-scroll"><table id="handoff-table"></table></div>
         </article>
@@ -1014,7 +1014,7 @@ window.SEED_DATA = {
     overview: "今日待办",
     samples: "全部申请",
     videos: "视频与 Code",
-    handoff: "商家交接",
+    handoff: "商家 Code 交付",
     data: "数据导入导出",
     members: "成员权限"
   };
@@ -1196,7 +1196,6 @@ window.SEED_DATA = {
     if (action === "remove-video-entry") removeVideoEntry(button.closest(".video-entry"));
     if (action === "focus-queue") focusQueue(button.dataset.queue);
     if (action === "copy-all") copyRecordSummary(id);
-    if (action === "copy-task") copyMerchantTask(id);
     if (action === "copy-video") copyVideoLink(id);
     if (action === "member-role") updateMemberRole(id, button.dataset.role);
     if (action === "member-remove") removeMember(id);
@@ -1342,7 +1341,7 @@ window.SEED_DATA = {
       priorities.push(priorityItem(record, "video", "待索要 Code", `${cleanHandle(record.creatorId)} · ${record.productName || record.productId}`, "生成话术", "message"));
     });
     handoff.slice(0, 2).forEach((record) => {
-      priorities.push(priorityItem(record, "handoff", "待商家投放", `${cleanHandle(record.creatorId)} · Code ${maskCode(record.code)}`, "复制任务", "copy-task"));
+      priorities.push(priorityItem(record, "handoff", "Code 待发给商家", `${cleanHandle(record.creatorId)} · Code ${maskCode(record.code)}`, "一键复制", "copy-all"));
     });
     noPost.slice(0, 2).forEach((record) => {
       priorities.push(priorityItem(record, "sample", "未发布任何视频达人", `${cleanHandle(record.creatorId)} · ${record.productName || record.productId}`, "查看异常", "edit"));
@@ -1355,8 +1354,8 @@ window.SEED_DATA = {
       ["待审核", state.records.filter((record) => record.type === "sample" && ["待审核", "待补全"].includes(record.status)).length, "补充达人信息"],
       ["待寄样", state.records.filter((record) => record.status === "待拍摄").length, "审核通过，等待发货"],
       ["已发货", state.records.filter((record) => ["已发货", "内容处理中"].includes(record.status)).length, "等待内容交付"],
-      ["待投放", state.records.filter((record) => ["已完成", "待索要Code", "Code已收到", "待投放"].includes(record.status)).length, "Code 与商家交接"],
-      ["已投放", state.records.filter((record) => record.status === "已投放").length, "进入效果复盘"]
+      ["Code 交付", state.records.filter((record) => record.codeStatus === "已收到").length, "一键复制给商家"],
+      ["待核实", state.records.filter((record) => getAnomalies(record).length).length, "异常记录"]
     ];
     $("#pipeline").innerHTML = stages.map(([label, count, sub], index) => `
       <div class="pipeline-step">
@@ -1683,7 +1682,7 @@ window.SEED_DATA = {
       return `<button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
     if (isHandoffReady(record)) {
-      return `<button class="mini-button primary" data-action="copy-task" data-id="${id}">复制任务卡</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+      return `<button class="mini-button primary" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
     return `<button class="mini-button" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
   }
@@ -1762,7 +1761,7 @@ window.SEED_DATA = {
       <td>${renderVideoLinks(record)}</td>
       <td>${renderCodeLines(record)}<small>${escapeHtml(record.codeStatus || "")}</small></td>
       <td><strong>${escapeHtml(record.bd || state.settings.defaultBd || "—")}</strong><small>${escapeHtml(displayRecordStatus(record.status))}</small></td>
-      <td><div class="row-actions"><button class="mini-button" data-action="copy-all" data-id="${escapeHtml(record.id)}">一键复制</button><button class="mini-button primary" data-action="copy-task" data-id="${escapeHtml(record.id)}">复制任务卡</button><button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">编辑</button></div></td>
+      <td><div class="row-actions"><button class="mini-button primary" data-action="copy-all" data-id="${escapeHtml(record.id)}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">编辑</button></div></td>
     </tr>`).join("");
     table.innerHTML = header + `<tbody>${body || `<tr><td colspan="6"><div class="empty-state">还没有可交接给商家的记录</div></td></tr>`}</tbody>`;
   }
@@ -2089,50 +2088,20 @@ window.SEED_DATA = {
     }
     record.code = code;
     record.codeStatus = "已收到";
-    record.status = "待投放";
     record.updatedAt = new Date().toISOString();
     try {
       await cloudUpsertRecord(record);
       $("#code-dialog").close();
       renderAll();
-      toast("Code 已保存，记录已进入商家交接");
+      toast("Code 已保存，可一键复制给商家");
     } catch (error) {
       toast(`Code 保存失败：${error.message}`, true);
     }
   }
 
-  async function copyRecordSummary(id) {
-    const record = state.records.find((item) => item.id === id);
-    if (!record) return;
-    await copyText(buildRecordCopyText(record), "达人名称、视频链接、vid、Code 已复制");
-  }
-
-  function buildMerchantTaskText(record) {
-    return [
-      buildRecordCopyText(record),
-      `产品：${record.productName || "—"}`,
-      `商品ID：${record.productId || "—"}`,
-      `商家/BD：${record.bd || state.settings.defaultBd || "—"}`,
-      `状态：${displayRecordStatus(record.status)}`
-    ].join("\n");
-  }
-
-  async function copyMerchantTask(id) {
-    const record = state.records.find((item) => item.id === id);
-    if (!record) return;
-    await copyText(buildMerchantTaskText(record), "商家任务卡已复制");
-  }
-
-  async function copyAllMerchantTasks() {
-    const records = state.records.filter(isHandoffReady);
-    if (!records.length) { toast("当前没有待交接任务", true); return; }
-    await copyText(records.map(buildMerchantTaskText).join("\n\n---\n\n"), `已复制 ${records.length} 张商家任务卡`);
-  }
-
   function buildRecordCopyText(record) {
     const entries = videoEntries(record);
     const urls = entries.map((entry) => entry.url).filter(Boolean);
-    const vids = entries.map((entry) => entry.vid).filter(Boolean);
     const codes = entries.map((entry) => entry.code).filter(Boolean);
     const numbered = (values) => values.length
       ? values.map((value, index) => `${values.length > 1 ? `${index + 1}. ` : ""}${value}`).join("\n")
@@ -2140,16 +2109,20 @@ window.SEED_DATA = {
     return [
       `达人：@${cleanHandle(record.creatorId) || "—"}`,
       `视频链接：\n${numbered(urls)}`,
-      `vid：\n${numbered(vids)}`,
       `Code：\n${numbered(codes)}`
     ].join("\n");
   }
 
-  async function copyVideoLink(id) {
+  async function copyRecordSummary(id) {
     const record = state.records.find((item) => item.id === id);
-    const urls = record ? videoEntries(record).map((entry) => entry.url).filter(Boolean) : [];
-    if (!urls.length) return;
-    await copyText(urls.join("\n"), urls.length > 1 ? `已复制 ${urls.length} 条视频链接` : "视频链接已复制");
+    if (!record) return;
+    await copyText(buildRecordCopyText(record), "达人名称、视频链接和 Code 已复制");
+  }
+
+  async function copyAllMerchantTasks() {
+    const records = state.records.filter(isHandoffReady);
+    if (!records.length) { toast("当前没有可复制的商家 Code 记录", true); return; }
+    await copyText(records.map(buildRecordCopyText).join("\n\n---\n\n"), `已复制 ${records.length} 条商家投流信息`);
   }
 
   async function copyDailyBrief() {
@@ -2165,7 +2138,7 @@ window.SEED_DATA = {
       `总申请：${state.records.length}`,
       `待审核 / 待补全：${pending.length}`,
       `待索要 Code：${waitingCode.length}`,
-      `待商家投放：${handoff.length}`,
+      `Code 待发商家：${handoff.length}`,
       `数据异常：${anomalies.length}`,
       `未发布任何视频：${noPost.length}`,
       `飞书同步：${feishuStatus}`
@@ -2196,8 +2169,8 @@ window.SEED_DATA = {
       record.videoUrl, record.vid, record.code, record.bd, record.status
     ]);
     const csv = "\ufeff" + [headers, ...rows].map((row) => row.map(csvEscape).join(",")).join("\r\n");
-    downloadFile(csv, `商家投放交接_${todayIso()}.csv`, "text/csv;charset=utf-8");
-    toast(`已导出 ${records.length} 条交接记录`);
+    downloadFile(csv, `商家Code交付_${todayIso()}.csv`, "text/csv;charset=utf-8");
+    toast(`已导出 ${records.length} 条 Code 记录`);
   }
 
   function exportBackup() {
@@ -2411,7 +2384,6 @@ window.SEED_DATA = {
     }
     if (record.code) {
       record.codeStatus = "已收到";
-      if (record.status === "待索要Code") record.status = "待投放";
     }
     if (record.videoUrl) {
       const urls = splitMultiline(record.videoUrl);
@@ -2447,7 +2419,7 @@ window.SEED_DATA = {
   }
 
   function isHandoffReady(record) {
-    return record.type === "video" && record.status !== "未发布任何视频" && (record.codeStatus === "已收到" || record.status === "待投放" || record.status === "已投放");
+    return record.type === "video" && record.status !== "未发布任何视频" && record.codeStatus === "已收到";
   }
 
   function recordKey(record) {
