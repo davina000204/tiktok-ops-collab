@@ -165,6 +165,20 @@ td small.anomaly-text { color: var(--amber); font-weight: 700; }
 .form-grid textarea { resize: vertical; }
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { border-color: #83cbb8; box-shadow: 0 0 0 3px rgba(15,159,132,.08); }
 .span-2 { grid-column: span 2; }
+.video-fields { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fbfcfb; }
+.video-fields-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.video-fields-heading > div { display: grid; gap: 4px; }
+.video-fields-heading strong { color: var(--ink); font-size: 12px; }
+.video-fields-heading small { color: #718079; font-weight: 550; line-height: 1.45; }
+.video-entry-list { display: grid; gap: 9px; }
+.video-entry { display: grid; grid-template-columns: minmax(180px, 2fr) minmax(100px, .85fr) minmax(110px, 1fr) 34px; gap: 8px; align-items: end; padding: 10px; border-radius: 10px; background: #fff; border: 1px solid #e7ece9; }
+.video-entry label { min-width: 0; }
+.video-entry .remove-video-entry { margin-bottom: 3px; }
+.multi-values { display: grid; gap: 5px; }
+.multi-value-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.multi-value-line a { white-space: nowrap; }
+.multi-empty { color: #8a9892; font-size: 11px; }
+.special-note { display: block; margin-top: 6px; color: var(--amber); font-size: 10px; font-weight: 700; }
 .dialog-actions { display: flex; align-items: center; gap: 9px; margin-top: 20px; }
 .spacer { flex: 1; }
 .message-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
@@ -177,7 +191,8 @@ td small.anomaly-text { color: var(--amber); font-weight: 700; }
 .toast.show { opacity: 1; transform: none; }
 .toast.error { background: #8f312e; }
 @media (max-width: 1120px) { .app-shell { grid-template-columns: 210px minmax(0,1fr); } .sidebar { width: 210px; } .main-area { padding: 26px 24px 40px; } .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .overview-grid, .data-grid { grid-template-columns: 1fr; } .pipeline { grid-template-columns: repeat(5, 150px); overflow-x: auto; padding-bottom: 6px; } .schema-grid { grid-template-columns: 130px 1fr; } }
-@media (max-width: 760px) { .app-shell { display: block; } .sidebar { position: static; width: auto; padding: 16px; } .brand-block { padding-bottom: 14px; } .main-nav { grid-template-columns: repeat(3, 1fr); } .nav-item { justify-content: center; padding: 9px; font-size: 12px; } .nav-item span, .nav-item b { display: none; } .sidebar-note { display: none; } .main-area { padding: 20px 14px 34px; } .topbar { align-items: flex-start; } .topbar h1 { font-size: 24px; } .top-actions { flex-direction: column; } .kpi-grid { grid-template-columns: 1fr 1fr; } .toolbar { flex-wrap: wrap; } .search-wrap { flex-basis: 100%; } .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: auto; } .health-ring-wrap { align-items: flex-start; } .table-title { flex-direction: column; } }
+@media (max-width: 900px) { .video-entry { grid-template-columns: 1fr 1fr; } .video-entry .remove-video-entry { grid-column: 2; justify-self: end; } }
+@media (max-width: 760px) { .app-shell { display: block; } .sidebar { position: static; width: auto; padding: 16px; } .brand-block { padding-bottom: 14px; } .main-nav { grid-template-columns: repeat(3, 1fr); } .nav-item { justify-content: center; padding: 9px; font-size: 12px; } .nav-item span, .nav-item b { display: none; } .sidebar-note { display: none; } .main-area { padding: 20px 14px 34px; } .topbar { align-items: flex-start; } .topbar h1 { font-size: 24px; } .top-actions { flex-direction: column; } .kpi-grid { grid-template-columns: 1fr 1fr; } .toolbar { flex-wrap: wrap; } .search-wrap { flex-basis: 100%; } .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: auto; } .video-fields-heading { align-items: flex-start; flex-direction: column; } .video-entry { grid-template-columns: 1fr; } .video-entry .remove-video-entry { grid-column: auto; justify-self: end; } .health-ring-wrap { align-items: flex-start; } .table-title { flex-direction: column; } }
 
 /* Collaborative cloud layer */
 body.auth-locked .app-shell { display: none; }
@@ -288,6 +303,7 @@ body.is-viewer .read-only-note { display:block; }
         <button class="nav-item" data-view="samples" data-status-filter="待拍摄"><span>□</span> 待发货 <b id="nav-ready-count">0</b></button>
         <button class="nav-item" data-view="samples" data-status-filter="已发货"><span>▣</span> 已发货 <b id="nav-shipped-count">0</b></button>
         <button class="nav-item" data-view="samples" data-status-filter="内容处理中"><span>▶</span> 内容处理中 <b id="nav-content-count">0</b></button>
+        <button class="nav-item" data-view="samples" data-status-filter="未发布任何视频"><span>!</span> 未发布视频 <b id="nav-nopost-count">0</b></button>
         <button class="nav-item" data-view="samples" data-status-filter="已完成"><span>✓</span> 已完成 <b id="nav-completed-count">0</b></button>
         <button class="nav-item" data-view="samples" data-status-filter="__canceled__"><span>×</span> 已取消 <b id="nav-canceled-count">0</b></button>
         <div class="nav-section-label">管理</div>
@@ -391,6 +407,7 @@ body.is-viewer .read-only-note { display:block; }
             <option value="待拍摄">待发货</option>
             <option value="已发货">已发货</option>
             <option value="内容处理中">内容处理中</option>
+            <option value="未发布任何视频">未发布任何视频达人</option>
             <option value="已完成">已完成</option>
             <option value="__canceled__">已取消</option>
             <option value="__review__">待核实 / OCR 异常</option>
@@ -419,6 +436,7 @@ body.is-viewer .read-only-note { display:block; }
             <option value="待索要Code">待索要Code</option>
             <option value="Code已收到">Code已收到</option>
             <option value="内容处理中">内容处理中</option>
+            <option value="未发布任何视频">未发布任何视频达人</option>
             <option value="已完成">已完成</option>
             <option value="待投放">待投放</option>
             <option value="已投放">已投放</option>
@@ -428,8 +446,8 @@ body.is-viewer .read-only-note { display:block; }
         <article class="panel table-panel">
           <div class="table-title">
             <div>
-              <h2>已完成视频与 Code 跟进</h2>
-              <p>保存视频链接后，系统自动提取用户名和 vid。</p>
+              <h2>视频与 Code 跟进</h2>
+              <p>支持同一达人多条视频；未发布任何内容会单独标记，不计入已完成。</p>
             </div>
             <span class="count-chip" id="video-count-label">0 条</span>
           </div>
@@ -568,10 +586,14 @@ body.is-viewer .read-only-note { display:block; }
         <label>申请方式<input id="field-method" value="线上申请"></label>
         <label>BD<input id="field-bd"></label>
         <label>是否同意<select id="field-approved"><option value="">未决定</option><option value="是">是</option><option value="否">否</option></select></label>
-        <label>当前状态<select id="field-status"><option>待审核</option><option>待补全</option><option>待拍摄</option><option>已发货</option><option>内容处理中</option><option>已完成</option><option>待索要Code</option><option>Code已收到</option><option>待投放</option><option>已投放</option><option>已过期</option><option>已取消</option><option>已拒绝</option></select></label>
-        <label class="span-2">视频链接<input id="field-video-url" placeholder="https://www.tiktok.com/@creator/video/123"></label>
-        <label>vid<input id="field-vid"></label>
-        <label>Code<input id="field-code"></label>
+        <label>当前状态<select id="field-status"><option>待审核</option><option>待补全</option><option>待拍摄</option><option>已发货</option><option>内容处理中</option><option>未发布任何视频</option><option>已完成</option><option>待索要Code</option><option>Code已收到</option><option>待投放</option><option>已投放</option><option>已过期</option><option>已取消</option><option>已拒绝</option></select></label>
+        <div class="video-fields span-2">
+          <div class="video-fields-heading">
+            <div><strong>视频链接、vid 与 Code</strong><small>同一达人有多条视频时，可逐条添加；保存后分别在链接、vid、Code 列中按换行保留。</small></div>
+            <button type="button" class="button subtle" data-action="add-video-entry">＋ 添加视频</button>
+          </div>
+          <div id="video-entry-list" class="video-entry-list"></div>
+        </div>
         <label>活动 ID<input id="field-campaign"></label>
         <label>商品在达人橱窗<select id="field-showcase"><option value="">未知</option><option value="是">是</option><option value="否">否</option></select></label>
         <label class="span-2">备注<textarea id="field-note" rows="3"></textarea></label>
@@ -958,15 +980,19 @@ window.SEED_DATA = {
     "待拍摄": { title: "待发货申请", description: "审核通过、等待寄样的达人申请。" },
     "已发货": { title: "已发货申请", description: "样品已寄出，等待达人交付内容。" },
     "内容处理中": { title: "内容处理中", description: "达人正在拍摄或制作内容。" },
-    "已完成": { title: "已完成申请", description: "TikTok 后台已完成全部流程的达人记录。" },
+    "未发布任何视频": { title: "未发布任何视频达人", description: "TikTok 后台显示 No content posted；单独标记，不计入已完成。" },
+    "已完成": { title: "已完成申请", description: "只统计 TikTok 后台真实完成并已交付视频的达人记录。" },
     "__canceled__": { title: "已取消申请", description: "包含已取消、已拒绝和已过期的申请。" },
     "__review__": { title: "待核实 / OCR 异常", description: "缺少关键字段或需要人工核实的记录。" }
   };
 
   const STATUS_OPTIONS = [
-    "待审核", "待补全", "待拍摄", "已发货", "内容处理中", "已完成",
+    "待审核", "待补全", "待拍摄", "已发货", "内容处理中", "未发布任何视频", "已完成",
     "待索要Code", "Code已收到", "待投放", "已投放", "已过期", "已取消", "已拒绝"
   ];
+  const VIDEO_STATUSES = new Set([
+    "内容处理中", "未发布任何视频", "已完成", "待索要Code", "Code已收到", "待投放", "已投放"
+  ]);
 
   let state;
   let currentView = "overview";
@@ -1072,7 +1098,9 @@ window.SEED_DATA = {
     $("#video-status-filter").addEventListener("change", renderVideos);
     $("#save-record-btn").addEventListener("click", saveRecordFromForm);
     $("#delete-record-btn").addEventListener("click", deleteEditingRecord);
-    $("#field-video-url").addEventListener("blur", autofillVideoDetails);
+    $("#video-entry-list").addEventListener("blur", (event) => {
+      if (event.target.matches(".video-entry-url")) autofillVideoDetails(event.target);
+    }, true);
     $("#message-language").addEventListener("change", updateMessageText);
     $("#copy-message-btn").addEventListener("click", copyCurrentMessage);
     $("#received-code-btn").addEventListener("click", openCodeDialogFromMessage);
@@ -1110,6 +1138,9 @@ window.SEED_DATA = {
     if (action === "reject") updateStatus(id, "已拒绝", { approved: "否" });
     if (action === "message") openMessageDialog(id);
     if (action === "code") openCodeDialog(id);
+    if (action === "add-video-entry") addVideoEntry();
+    if (action === "remove-video-entry") removeVideoEntry(button.closest(".video-entry"));
+    if (action === "copy-all") copyRecordSummary(id);
     if (action === "copy-task") copyMerchantTask(id);
     if (action === "copy-video") copyVideoLink(id);
     if (action === "member-role") updateMemberRole(id, button.dataset.role);
@@ -1172,6 +1203,7 @@ window.SEED_DATA = {
       "nav-ready-count": countRecordStatusFilter("待拍摄"),
       "nav-shipped-count": countRecordStatusFilter("已发货"),
       "nav-content-count": countRecordStatusFilter("内容处理中"),
+      "nav-nopost-count": countRecordStatusFilter("未发布任何视频"),
       "nav-completed-count": countRecordStatusFilter("已完成"),
       "nav-canceled-count": countRecordStatusFilter("__canceled__")
     };
@@ -1183,7 +1215,7 @@ window.SEED_DATA = {
 
   function renderOverview() {
     const pending = state.records.filter((record) => record.type === "sample" && ["待审核", "待补全"].includes(record.status));
-    const waitingCode = state.records.filter((record) => record.type === "video" && record.codeStatus !== "已收到" && record.status !== "已投放");
+    const waitingCode = state.records.filter((record) => record.type === "video" && record.status !== "未发布任何视频" && record.codeStatus !== "已收到" && record.status !== "已投放");
     const handoff = state.records.filter(isHandoffReady);
     const anomalies = state.records.filter((record) => getAnomalies(record).length);
     const healthy = state.records.length ? Math.max(0, Math.round((1 - anomalies.length / state.records.length) * 100)) : 100;
@@ -1371,7 +1403,7 @@ window.SEED_DATA = {
 
   const STATUS_PROGRESS = {
     "待审核": 0, "待补全": 0, "待拍摄": 1, "已发货": 2,
-    "内容处理中": 3, "已完成": 4, "待索要Code": 5,
+    "内容处理中": 3, "已完成": 4, "未发布任何视频": 4, "待索要Code": 5,
     "Code已收到": 6, "待投放": 7, "已投放": 8
   };
 
@@ -1533,8 +1565,9 @@ window.SEED_DATA = {
         <td class="brand-name-cell" title="${escapeAttr(record.productName || record.productId || "")}"><strong>${escapeHtml(brandForRecord(record))}</strong><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
         <td><span class="mono">${escapeHtml(record.productId || "—")}</span><small>${escapeHtml(record.sku || "—")}</small></td>
         <td>${escapeHtml(record.bd || "—")}</td>
-        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(record.status)}</span>${anomalies.length ? `<small class="anomaly-text">${escapeHtml(anomalies.slice(0, 2).join(" · "))}</small>` : ""}</td>
+        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(displayRecordStatus(record.status))}</span>${record.status === "未发布任何视频" ? `<span class="special-note">未交付任何视频 · 不计入已完成</span>` : ""}${anomalies.length ? `<small class="anomaly-text">${escapeHtml(anomalies.slice(0, 2).join(" · "))}</small>` : ""}</td>
         <td><div class="row-actions">
+          <button class="mini-button" data-action="copy-all" data-id="${escapeHtml(record.id)}">一键复制</button>
           <button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">${anomalies.length ? "核实" : "编辑"}</button>
           ${record.status === "待审核" ? `<button class="mini-button primary edit-only" data-action="approve" data-id="${escapeHtml(record.id)}">通过</button><button class="mini-button edit-only" data-action="reject" data-id="${escapeHtml(record.id)}">拒绝</button>` : record.status === "待补全" ? `<button class="mini-button edit-only" data-action="reject" data-id="${escapeHtml(record.id)}">拒绝</button>` : ""}
         </div></td>
@@ -1550,17 +1583,18 @@ window.SEED_DATA = {
     const table = $("#video-table");
     const header = `<thead><tr><th>达人</th><th>产品</th><th>视频链接 / vid</th><th>Code</th><th>状态</th><th>操作</th></tr></thead>`;
     const body = records.map((record) => {
-      const link = record.videoUrl ? `<a class="link" href="${escapeAttr(record.videoUrl)}" target="_blank" rel="noreferrer">打开视频</a>` : `<span class="status-badge error">待补链接</span>`;
+      const special = record.status === "未发布任何视频";
+      const link = renderVideoLinks(record, special);
       return `<tr>
         <td>${renderCreatorCell(record)}</td>
         <td><strong>${escapeHtml(record.productName || "未匹配产品")}</strong><small>${escapeHtml(record.productId || "")}</small><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
-        <td>${link}<small class="mono">${escapeHtml(record.vid || "—")}</small></td>
-        <td><span class="mono">${escapeHtml(maskCode(record.code))}</span><small>${escapeHtml(record.codeStatus || "未请求")}</small></td>
-        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(record.status)}</span></td>
+        <td>${link}</td>
+        <td>${renderCodeLines(record)}<small>${escapeHtml(record.codeStatus || "未请求")}</small></td>
+        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(displayRecordStatus(record.status))}</span>${special ? `<span class="special-note">No content posted · 未交付任何视频</span>` : ""}</td>
         <td><div class="row-actions">
-          ${record.videoUrl ? `<button class="mini-button icon" title="复制视频链接" data-action="copy-video" data-id="${escapeHtml(record.id)}">⧉</button>` : ""}
-          <button class="mini-button" data-action="message" data-id="${escapeHtml(record.id)}">Code 话术</button>
-          <button class="mini-button primary edit-only" data-action="code" data-id="${escapeHtml(record.id)}">录入 Code</button>
+          <button class="mini-button" data-action="copy-all" data-id="${escapeHtml(record.id)}">一键复制</button>
+          ${record.videoUrl ? `<button class="mini-button icon" title="复制全部视频链接" data-action="copy-video" data-id="${escapeHtml(record.id)}">⧉</button>` : ""}
+          ${special ? "" : `<button class="mini-button" data-action="message" data-id="${escapeHtml(record.id)}">Code 话术</button><button class="mini-button primary edit-only" data-action="code" data-id="${escapeHtml(record.id)}">录入 Code</button>`}
           <button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">编辑</button>
         </div></td>
       </tr>`;
@@ -1575,10 +1609,10 @@ window.SEED_DATA = {
     const body = records.map((record) => `<tr>
       <td><strong>@${escapeHtml(cleanHandle(record.creatorId))}</strong><small>${escapeHtml(record.creatorName || "")}</small></td>
       <td><strong>${escapeHtml(record.productName || record.productId)}</strong><small class="mono">${escapeHtml(record.productId || "")}</small></td>
-      <td>${record.videoUrl ? `<a class="link" href="${escapeAttr(record.videoUrl)}" target="_blank" rel="noreferrer">查看视频</a><small class="mono">${escapeHtml(record.vid || "")}</small>` : "—"}</td>
-      <td><span class="mono">${escapeHtml(record.code || "—")}</span><small>${escapeHtml(record.codeStatus || "")}</small></td>
-      <td><strong>${escapeHtml(record.bd || state.settings.defaultBd || "—")}</strong><small>${escapeHtml(record.status)}</small></td>
-      <td><div class="row-actions"><button class="mini-button primary" data-action="copy-task" data-id="${escapeHtml(record.id)}">复制任务卡</button><button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">编辑</button></div></td>
+      <td>${renderVideoLinks(record)}</td>
+      <td>${renderCodeLines(record)}<small>${escapeHtml(record.codeStatus || "")}</small></td>
+      <td><strong>${escapeHtml(record.bd || state.settings.defaultBd || "—")}</strong><small>${escapeHtml(displayRecordStatus(record.status))}</small></td>
+      <td><div class="row-actions"><button class="mini-button" data-action="copy-all" data-id="${escapeHtml(record.id)}">一键复制</button><button class="mini-button primary" data-action="copy-task" data-id="${escapeHtml(record.id)}">复制任务卡</button><button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">编辑</button></div></td>
     </tr>`).join("");
     table.innerHTML = header + `<tbody>${body || `<tr><td colspan="6"><div class="empty-state">还没有可交接给商家的记录</div></td></tr>`}</tbody>`;
   }
@@ -1606,9 +1640,7 @@ window.SEED_DATA = {
     $("#field-bd").value = record?.bd || state.settings.defaultBd || "";
     $("#field-approved").value = record?.approved || "";
     $("#field-status").value = record?.status || (defaultType === "video" ? "待索要Code" : "待审核");
-    $("#field-video-url").value = record?.videoUrl || "";
-    $("#field-vid").value = record?.vid || "";
-    $("#field-code").value = record?.code || "";
+    setVideoEntryValues(record?.videoUrl || "", record?.vid || "", record?.code || "");
     $("#field-campaign").value = record?.campaignId || "";
     $("#field-showcase").value = record?.showcase || "";
     $("#field-note").value = record?.note || "";
@@ -1647,6 +1679,7 @@ window.SEED_DATA = {
   }
 
   function readRecordForm() {
+    const videoValues = readVideoEntryValues();
     return normalizeRecord({
       id: $("#record-id").value || null,
       type: $("#field-type").value,
@@ -1664,13 +1697,13 @@ window.SEED_DATA = {
       bd: $("#field-bd").value,
       approved: $("#field-approved").value,
       status: $("#field-status").value,
-      videoUrl: $("#field-video-url").value,
-      vid: $("#field-vid").value,
-      code: $("#field-code").value,
+      videoUrl: videoValues.videoUrl,
+      vid: videoValues.vid,
+      code: videoValues.code,
       campaignId: $("#field-campaign").value,
       showcase: $("#field-showcase").value,
       note: $("#field-note").value,
-      codeStatus: $("#field-code").value ? "已收到" : "未请求"
+      codeStatus: videoValues.code ? "已收到" : "未请求"
     });
   }
 
@@ -1691,11 +1724,13 @@ window.SEED_DATA = {
     }
   }
 
-  function autofillVideoDetails() {
-    const parsed = parseVideoUrl($("#field-video-url").value);
+  function autofillVideoDetails(input) {
+    const parsed = parseVideoUrl(input.value);
     if (!parsed) return;
-    $("#field-video-url").value = parsed.videoUrl;
-    $("#field-vid").value = parsed.vid;
+    input.value = parsed.videoUrl;
+    const row = input.closest(".video-entry");
+    const vidInput = row?.querySelector(".video-entry-vid");
+    if (vidInput && !vidInput.value.trim()) vidInput.value = parsed.vid;
     if (!$("#field-creator").value || $("#field-creator").value === "待补全") $("#field-creator").value = parsed.creatorId;
     $("#field-type").value = "video";
     if (!$("#field-status").value || $("#field-status").value === "待审核") $("#field-status").value = "待索要Code";
@@ -1835,26 +1870,46 @@ window.SEED_DATA = {
     }
   }
 
+  async function copyRecordSummary(id) {
+    const record = state.records.find((item) => item.id === id);
+    if (!record) return;
+    await copyText(buildRecordCopyText(record), "达人名称、视频链接、vid、Code 已复制");
+  }
+
   async function copyMerchantTask(id) {
     const record = state.records.find((item) => item.id === id);
     if (!record) return;
     const task = [
-      `达人：@${cleanHandle(record.creatorId) || "—"}`,
+      buildRecordCopyText(record),
       `产品：${record.productName || "—"}`,
       `商品ID：${record.productId || "—"}`,
-      `视频链接：${record.videoUrl || "—"}`,
-      `视频ID：${record.vid || "—"}`,
-      `推广Code：${record.code || "—"}`,
       `商家/BD：${record.bd || state.settings.defaultBd || "—"}`,
-      "状态：待投放"
+      `状态：${displayRecordStatus(record.status)}`
     ].join("\n");
     await copyText(task, "商家任务卡已复制");
   }
 
+  function buildRecordCopyText(record) {
+    const entries = videoEntries(record);
+    const urls = entries.map((entry) => entry.url).filter(Boolean);
+    const vids = entries.map((entry) => entry.vid).filter(Boolean);
+    const codes = entries.map((entry) => entry.code).filter(Boolean);
+    const numbered = (values) => values.length
+      ? values.map((value, index) => `${values.length > 1 ? `${index + 1}. ` : ""}${value}`).join("\n")
+      : "—";
+    return [
+      `达人：@${cleanHandle(record.creatorId) || "—"}`,
+      `视频链接：\n${numbered(urls)}`,
+      `vid：\n${numbered(vids)}`,
+      `Code：\n${numbered(codes)}`
+    ].join("\n");
+  }
+
   async function copyVideoLink(id) {
     const record = state.records.find((item) => item.id === id);
-    if (!record?.videoUrl) return;
-    await copyText(record.videoUrl, "视频链接已复制");
+    const urls = record ? videoEntries(record).map((entry) => entry.url).filter(Boolean) : [];
+    if (!urls.length) return;
+    await copyText(urls.join("\n"), urls.length > 1 ? `已复制 ${urls.length} 条视频链接` : "视频链接已复制");
   }
 
   function exportFeishuCsv() {
@@ -2032,9 +2087,11 @@ window.SEED_DATA = {
 
   function normalizeRecord(raw = {}) {
     const videoUrl = String(raw.videoUrl || raw["视频链接"] || "").trim();
-    const parsed = parseVideoUrl(videoUrl);
-    const status = String(raw.status || raw["当前状态"] || raw["状态"] || "").trim();
-    const type = String(raw.type || "").trim() || (videoUrl || status === "已完成" || status.includes("Code") ? "video" : "sample");
+    const firstVideoUrl = splitMultiline(videoUrl).find(Boolean) || "";
+    const parsed = parseVideoUrl(firstVideoUrl);
+    const status = normalizeStatusText(raw.status || raw["当前状态"] || raw["状态"] || "");
+    let type = String(raw.type || "").trim() || (videoUrl || VIDEO_STATUSES.has(status) || status.includes("Code") ? "video" : "sample");
+    if (status === "未发布任何视频") type = "video";
     const sourceMeta = parseSourceMetadata(raw.source || raw["数据来源"] || "导入");
     const sourcePosition = Number(raw.sourcePosition ?? sourceMeta.sourcePosition);
     return {
@@ -2058,8 +2115,8 @@ window.SEED_DATA = {
       bd: String(raw.bd || raw["bd"] || raw["BD"] || "").trim(),
       approved: normalizeYesNo(raw.approved || raw["是否同意"] || ""),
       shootDate: String(raw.shootDate || raw["拍摄日期"] || "").slice(0, 10),
-      videoUrl: parsed?.videoUrl || videoUrl,
-      vid: String(raw.vid || raw["vid"] || raw["视频ID"] || parsed?.vid || "").trim(),
+      videoUrl,
+      vid: String(raw.vid || raw["vid"] || raw["视频ID"] || (splitMultiline(videoUrl).length === 1 ? parsed?.vid : "") || "").trim(),
       code: String(raw.code || raw["code"] || raw["推广Code"] || "").trim(),
       status: status || (type === "video" ? "待索要Code" : "待审核"),
       codeStatus: String(raw.codeStatus || raw["Code状态"] || (raw.code || raw["code"] ? "已收到" : "未请求")).trim(),
@@ -2085,6 +2142,12 @@ window.SEED_DATA = {
       if (!record.campaignId) record.campaignId = product.campaignId;
     }
     if (!record.bd) record.bd = state.settings.defaultBd || "";
+    if (record.status === "未发布任何视频") {
+      record.type = "video";
+      if (!/未发布任何视频/.test(String(record.note || ""))) {
+        record.note = [record.note, "未发布任何视频达人"].filter(Boolean).join(" · ");
+      }
+    }
     if (record.code) {
       record.codeStatus = "已收到";
       if (record.status === "待索要Code") record.status = "待投放";
@@ -2112,14 +2175,14 @@ window.SEED_DATA = {
     if (!cleanHandle(record.creatorId) || record.creatorId === "待补全") anomalies.push("缺少达人 ID");
     if (!record.productId) anomalies.push("缺少商品 ID");
     if (/待核实/.test(String(record.note || ""))) anomalies.push("OCR 识别待核实");
-    if (record.type === "video" && !record.videoUrl) anomalies.push("缺少视频链接");
-    if (record.type === "video" && !record.vid) anomalies.push("缺少 vid");
+    if (record.type === "video" && record.status !== "未发布任何视频" && !record.videoUrl) anomalies.push("缺少视频链接");
+    if (record.type === "video" && record.status !== "未发布任何视频" && !record.vid) anomalies.push("缺少 vid");
     if (record.status === "Code已收到" && !record.code) anomalies.push("缺少 Code");
     return anomalies;
   }
 
   function isHandoffReady(record) {
-    return record.type === "video" && (record.codeStatus === "已收到" || record.status === "待投放" || record.status === "已投放");
+    return record.type === "video" && record.status !== "未发布任何视频" && (record.codeStatus === "已收到" || record.status === "待投放" || record.status === "已投放");
   }
 
   function recordKey(record) {
@@ -2210,9 +2273,99 @@ window.SEED_DATA = {
     return `${text.slice(0, 4)}…${text.slice(-4)}`;
   }
 
+  function normalizeStatusText(value) {
+    const text = String(value || "").trim();
+    return /no content posted|未发布任何内容|未发布内容/i.test(text) ? "未发布任何视频" : text;
+  }
+
+  function displayRecordStatus(status) {
+    return status === "未发布任何视频" ? "未发布任何视频达人" : status;
+  }
+
+  function splitMultiline(value) {
+    return String(value ?? "").split(/\r?\n/).map((item) => item.trim());
+  }
+
+  function videoEntries(record) {
+    const urls = splitMultiline(record?.videoUrl);
+    const vids = splitMultiline(record?.vid);
+    const codes = splitMultiline(record?.code);
+    const count = Math.max(1, urls.length, vids.length, codes.length);
+    return Array.from({ length: count }, (_, index) => ({
+      url: urls[index] || "",
+      vid: vids[index] || "",
+      code: codes[index] || ""
+    }));
+  }
+
+  function renderVideoLinks(record, special = false) {
+    const entries = videoEntries(record);
+    const linkCount = entries.filter((entry) => entry.url).length;
+    const rows = [];
+    entries.forEach((entry, index) => {
+      if (entry.url || entry.vid) {
+        rows.push(`<div class="multi-value-line">${entry.url ? `<a class="link" href="${escapeAttr(entry.url)}" target="_blank" rel="noreferrer">${linkCount > 1 ? `视频 ${index + 1}` : "打开视频"}</a>` : `<span class="multi-empty">视频 ${index + 1} 待补链接</span>`}${entry.vid ? `<small class="mono">vid: ${escapeHtml(entry.vid)}</small>` : ""}</div>`);
+      }
+    });
+    if (rows.length) return `<div class="multi-values">${rows.join("")}</div>`;
+    return special
+      ? '<span class="status-badge waiting">未发布任何内容</span>'
+      : '<span class="status-badge error">待补链接</span>';
+  }
+
+  function renderCodeLines(record) {
+    const codes = videoEntries(record).map((entry) => entry.code).filter(Boolean);
+    if (!codes.length) return '<span class="multi-empty">—</span>';
+    return `<div class="multi-values">${codes.map((code, index) => `<span class="mono">${codes.length > 1 ? `${index + 1}. ` : ""}${escapeHtml(maskCode(code))}</span>`).join("")}</div>`;
+  }
+
+  function setVideoEntryValues(videoUrl, vid, code) {
+    const entries = videoEntries({ videoUrl, vid, code });
+    $("#video-entry-list").innerHTML = "";
+    entries.forEach((entry) => addVideoEntry(entry));
+  }
+
+  function addVideoEntry(values = {}) {
+    const list = $("#video-entry-list");
+    const row = document.createElement("div");
+    row.className = "video-entry";
+    row.innerHTML = `
+      <label>视频链接<input class="video-entry-url" placeholder="https://www.tiktok.com/@creator/video/123" value="${escapeAttr(values.url || "")}"></label>
+      <label>vid<input class="video-entry-vid" value="${escapeAttr(values.vid || "")}"></label>
+      <label>Code<input class="video-entry-code" value="${escapeAttr(values.code || "")}"></label>
+      <button type="button" class="icon-button remove-video-entry" data-action="remove-video-entry" title="删除这条视频">×</button>`;
+    list.appendChild(row);
+    return row;
+  }
+
+  function removeVideoEntry(row) {
+    if (!row) return;
+    const rows = $$(".video-entry", $("#video-entry-list"));
+    if (rows.length <= 1) {
+      $$("input", row).forEach((input) => { input.value = ""; });
+      return;
+    }
+    row.remove();
+  }
+
+  function readVideoEntryValues() {
+    const rows = $$(".video-entry", $("#video-entry-list"));
+    const values = rows.map((row) => ({
+      url: row.querySelector(".video-entry-url")?.value.trim() || "",
+      vid: row.querySelector(".video-entry-vid")?.value.trim() || "",
+      code: row.querySelector(".video-entry-code")?.value.trim() || ""
+    }));
+    while (values.length > 1 && !values.at(-1).url && !values.at(-1).vid && !values.at(-1).code) values.pop();
+    return {
+      videoUrl: values.map((item) => item.url).join("\n"),
+      vid: values.map((item) => item.vid).join("\n"),
+      code: values.map((item) => item.code).join("\n")
+    };
+  }
+
   function statusClass(status) {
     if (["待审核", "待补全"].includes(status)) return "waiting";
-    if (["待索要Code", "已请求", "内容处理中"].includes(status)) return "waiting";
+    if (["待索要Code", "已请求", "内容处理中", "未发布任何视频"].includes(status)) return "waiting";
     if (["已发货", "Code已收到", "待投放"].includes(status)) return "ready";
     if (["待拍摄", "已完成", "已投放"].includes(status)) return "done";
     if (["已拒绝", "已过期", "已取消"].includes(status)) return "error";
