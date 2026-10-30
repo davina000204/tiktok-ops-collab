@@ -2153,12 +2153,16 @@ window.SEED_DATA = {
       if (record.status === "待索要Code") record.status = "待投放";
     }
     if (record.videoUrl) {
-      const parsed = parseVideoUrl(record.videoUrl);
-      if (parsed) {
-        record.videoUrl = parsed.videoUrl;
-        record.vid = record.vid || parsed.vid;
-        if (!record.creatorId || record.creatorId === "待补全") record.creatorId = parsed.creatorId;
-      }
+      const urls = splitMultiline(record.videoUrl);
+      const parsedEntries = urls.map((url) => parseVideoUrl(url));
+      record.videoUrl = urls.map((url, index) => parsedEntries[index]?.videoUrl || url).join("\n");
+      const currentVids = splitMultiline(record.vid);
+      const vidCount = Math.max(currentVids.length, parsedEntries.length);
+      record.vid = Array.from({ length: vidCount }, (_, index) => currentVids[index] || parsedEntries[index]?.vid || "")
+        .join("\n")
+        .replace(/\n+$/, "");
+      const firstParsed = parsedEntries.find(Boolean);
+      if (firstParsed && (!record.creatorId || record.creatorId === "待补全")) record.creatorId = firstParsed.creatorId;
       if (record.type === "sample") record.type = "video";
     }
     return record;
