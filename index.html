@@ -1146,6 +1146,7 @@ window.SEED_DATA = {
     const missingCode = state.records.filter((record) => record.status === "Code已收到" && !record.code).length;
 
     const sourceTotals = state.records
+      .filter((record) => record.sourceTotal !== null && record.sourceTotal !== undefined && record.sourceTotal !== "")
       .map((record) => Number(record.sourceTotal))
       .filter(Number.isFinite);
     const tiktokTotal = sourceTotals.length ? Math.max(...sourceTotals) : state.records.length;
