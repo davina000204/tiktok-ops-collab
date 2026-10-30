@@ -905,6 +905,38 @@ window.SEED_DATA = {
     "Code状态", "产品名称", "SKU", "活动ID", "商品在达人橱窗"
   ];
 
+  const PRODUCT_BRAND_BY_PID = Object.freeze({
+    "1729617576838006966": "Sanjaya snack",
+    "1729617576838006996": "Sanjaya snack",
+    "1733020222700881348": "Yodovee",
+    "1733999087793505732": "Yodovee",
+    "1735043278326564577": "Tidur Tenang",
+    "1735047312405726945": "Tidur Tenang",
+    "1735048665657935585": "VTEAK Kids healthy",
+    "1735061037881722593": "VTEAK Kids healthy",
+    "1735063456116737761": "VTEAK Kids healthy",
+    "1735247865052103682": "Dr.ville",
+    "173542408596981188": "Yodovee",
+    "1735439558842287213": "KEZHIDE TOOLS",
+    "1735448214677653217": "VTEAK Kids healthy",
+    "1735451401409169121": "Tidur Tenang",
+    "1735462408596981188": "Yodovee",
+    "1735695252910671585": "Tidur Tenang",
+    "1735790957761300193": "Tidur Tenang",
+    "1735862918639027937": "Tidur Tenang",
+    "1735878585929533153": "Tidur Tenang",
+    "1736031019529110892": "Lampure",
+    "1736031593162900844": "Lampure",
+    "1736031597840205164": "Lampure",
+    "1736549972405093828": "Yodovee",
+    "1737426142175135457": "Tidur Tenang",
+    "1737426428899198689": "Tidur Tenang",
+    "1737575397166515973": "YOUTO",
+    "1737764834658453253": "YOUTO",
+    "1737839797072462957": "KEZHIDE TOOLS",
+    "1737841519486403693": "KEZHIDE TOOLS",
+  });
+
   const VIEW_TITLES = {
     overview: "经营总览",
     samples: "待审核样品",
@@ -1416,9 +1448,18 @@ window.SEED_DATA = {
     </div>`;
   }
 
+  function brandForRecord(record) {
+    const productId = String(record.productId || "").trim();
+    const mapped = PRODUCT_BRAND_BY_PID[productId];
+    if (mapped) return mapped;
+    const product = findProduct(productId, record.sku);
+    const fallback = String(product?.brand || record.brand || "").trim();
+    return fallback && fallback !== "Home Textiles" && fallback !== "Food & Beverage" ? fallback : "未匹配品牌";
+  }
+
   function matchesQuery(record, query) {
     if (!query) return true;
-    return [record.creatorId, record.creatorName, record.productId, record.productName, record.sku, record.vid, record.code]
+    return [record.creatorId, record.creatorName, record.productId, record.productName, brandForRecord(record), record.sku, record.vid, record.code]
       .filter(Boolean).join(" ").toLowerCase().includes(query);
   }
 
@@ -1430,7 +1471,7 @@ window.SEED_DATA = {
     $("#sample-count-label").textContent = `${records.length} 条`;
     const table = $("#sample-table");
     const allSelected = selectableIds.size > 0 && [...selectableIds].every((id) => selectedSampleIds.has(id));
-    const header = `<thead><tr><th class="select-cell"><input type="checkbox" data-select-all ${allSelected ? "checked" : ""} ${selectableIds.size ? "" : "disabled"} title="选择当前列表中的待审核申请"></th><th>日期</th><th>达人</th><th>产品</th><th>商品 / SKU</th><th>BD</th><th>状态</th><th>操作</th></tr></thead>`;
+    const header = `<thead><tr><th class="select-cell"><input type="checkbox" data-select-all ${allSelected ? "checked" : ""} ${selectableIds.size ? "" : "disabled"} title="选择当前列表中的待审核申请"></th><th>日期</th><th>达人</th><th>品牌名称</th><th>商品 / SKU</th><th>BD</th><th>状态</th><th>操作</th></tr></thead>`;
     const body = records.map((record) => {
       const anomalies = getAnomalies(record);
       const selectable = canSelect && record.status === "待审核";
@@ -1439,7 +1480,7 @@ window.SEED_DATA = {
         <td class="select-cell">${selectable ? `<input type="checkbox" data-select-id="${escapeHtml(record.id)}" ${checked ? "checked" : ""} aria-label="选择 @${escapeAttr(record.creatorId || "未命名")}">` : ""}</td>
         <td class="mono">${escapeHtml(record.date || "—")}</td>
         <td>${renderCreatorCell(record)}</td>
-        <td><strong>${escapeHtml(record.productName || "未匹配产品")}</strong><small>${escapeHtml(record.productId || "缺少商品 ID")}</small><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
+        <td class="brand-name-cell" title="${escapeAttr(record.productName || record.productId || "")}"><strong>${escapeHtml(brandForRecord(record))}</strong><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
         <td><span class="mono">${escapeHtml(record.productId || "—")}</span><small>${escapeHtml(record.sku || "—")}</small></td>
         <td>${escapeHtml(record.bd || "—")}</td>
         <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(record.status)}</span>${anomalies.length ? `<small class="anomaly-text">${escapeHtml(anomalies.slice(0, 2).join(" · "))}</small>` : ""}</td>
