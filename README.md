@@ -80,7 +80,7 @@ https://davina000204.github.io/tiktok-ops-collab/
 - 同步健康面板：TikTok 快照、飞书云端同步、断线补查状态
 - 飞书云端函数：Supabase `feishu-sync` 每分钟自动执行，不依赖主电脑运行
 - 多视频完整保存
-- 商家 Code 批量一键复制（达人名称、视频链接、Code）
+- 商家 Code 批量一键复制（达人、产品名称、商品 ID、视频链接、vid、Code）
 - 今日运营简报一键复制
 - 在线 SOP：[manual.html](./manual.html)
 

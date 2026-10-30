@@ -491,7 +491,7 @@ body.is-viewer .read-only-note { display:block; }
           <div class="table-title">
             <div>
               <h2>商家 Code 交付</h2>
-              <p>Code 已收到后集中在这里；一键复制达人名称、视频链接和 Code 后发送给商家。</p>
+              <p>Code 已收到后集中在这里；一键复制达人、产品名称、商品 ID、视频链接、vid 和 Code 后发送给商家。</p>
             </div>
             <div class="row-actions"><button class="button subtle" id="handoff-copy-all-btn">一键复制全部</button><button class="button subtle" id="handoff-export-btn">导出 Code 清单</button></div>
           </div>
@@ -2102,13 +2102,17 @@ window.SEED_DATA = {
   function buildRecordCopyText(record) {
     const entries = videoEntries(record);
     const urls = entries.map((entry) => entry.url).filter(Boolean);
+    const vids = entries.map((entry) => entry.vid).filter(Boolean);
     const codes = entries.map((entry) => entry.code).filter(Boolean);
     const numbered = (values) => values.length
       ? values.map((value, index) => `${values.length > 1 ? `${index + 1}. ` : ""}${value}`).join("\n")
       : "—";
     return [
       `达人：@${cleanHandle(record.creatorId) || "—"}`,
+      `产品名称：${record.productName || "—"}`,
+      `商品ID：${record.productId || "—"}`,
       `视频链接：\n${numbered(urls)}`,
+      `vid：\n${numbered(vids)}`,
       `Code：\n${numbered(codes)}`
     ].join("\n");
   }
@@ -2116,7 +2120,7 @@ window.SEED_DATA = {
   async function copyRecordSummary(id) {
     const record = state.records.find((item) => item.id === id);
     if (!record) return;
-    await copyText(buildRecordCopyText(record), "达人名称、视频链接和 Code 已复制");
+    await copyText(buildRecordCopyText(record), "达人、产品名称、商品 ID、视频链接、vid 和 Code 已复制");
   }
 
   async function copyAllMerchantTasks() {
