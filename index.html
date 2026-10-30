@@ -191,6 +191,8 @@ td small.anomaly-text { color: var(--amber); font-weight: 700; }
 .multi-value-line a { white-space: nowrap; }
 .multi-empty { color: #8a9892; font-size: 11px; }
 .special-note { display: block; margin-top: 6px; color: var(--amber); font-size: 10px; font-weight: 700; }
+.inline-hint { display: inline-flex; align-items: center; margin-top: 6px; border: 0; border-radius: 999px; background: #fff3dd; color: var(--amber); padding: 4px 8px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.inline-hint:hover { background: #ffe8be; }
 .dialog-actions { display: flex; align-items: center; gap: 9px; margin-top: 20px; }
 .spacer { flex: 1; }
 .message-controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
@@ -652,6 +654,20 @@ body.is-viewer .read-only-note { display:block; }
     </div>
   </dialog>
 
+  <dialog id="performance-dialog" class="dialog message-dialog">
+    <div class="dialog-heading">
+      <div><p class="eyebrow">14-DAY FULFILLMENT</p><h2>14 天履约期提醒</h2></div>
+      <button type="button" class="icon-button" data-close-dialog="performance-dialog">×</button>
+    </div>
+    <div class="message-controls"><span id="performance-creator" class="creator-pill"></span></div>
+    <textarea id="performance-text" class="message-text" rows="12"></textarea>
+    <div class="dialog-actions">
+      <button type="button" class="button subtle" data-close-dialog="performance-dialog">关闭</button>
+      <span class="spacer"></span>
+      <button type="button" class="button primary" id="copy-performance-btn">一键复制双语话术</button>
+    </div>
+  </dialog>
+
   <dialog id="code-dialog" class="dialog small-dialog">
     <div class="dialog-heading">
       <div><p class="eyebrow">CODE</p><h2>录入推广 Code</h2></div>
@@ -1027,6 +1043,7 @@ window.SEED_DATA = {
   let currentView = "overview";
   let editingId = null;
   let activeMessageId = null;
+  let activePerformanceId = null;
   let activeCodeId = null;
   let selectedSampleIds = new Set();
   let selectedVideoIds = new Set();
@@ -1140,6 +1157,7 @@ window.SEED_DATA = {
     $("#copy-message-btn").addEventListener("click", copyCurrentMessage);
     $("#received-code-btn").addEventListener("click", openCodeDialogFromMessage);
     $("#save-code-btn").addEventListener("click", saveCode);
+    $("#copy-performance-btn").addEventListener("click", copyPerformanceMessage);
     $("#record-form").addEventListener("submit", (event) => event.preventDefault());
     $("#magic-login-btn").addEventListener("click", sendMagicLink);
     $("#signout-btn").addEventListener("click", signOut);
@@ -1172,6 +1190,7 @@ window.SEED_DATA = {
     if (action === "approve") updateStatus(id, "待拍摄", { approved: "是" });
     if (action === "reject") updateStatus(id, "已拒绝", { approved: "否" });
     if (action === "message") openMessageDialog(id);
+    if (action === "performance-message") openPerformanceDialog(id);
     if (action === "code") openCodeDialog(id);
     if (action === "add-video-entry") addVideoEntry();
     if (action === "remove-video-entry") removeVideoEntry(button.closest(".video-entry"));
@@ -1646,17 +1665,27 @@ window.SEED_DATA = {
       .filter(Boolean).join(" ").toLowerCase().includes(query);
   }
 
-  function primaryActionForRecord(record) {
-    const anomalies = getAnomalies(record);
-    if (record.status === "待审核") return { label: "通过", action: "approve", primary: true };
-    if (record.status === "待补全") return { label: "补充", action: "edit", primary: true };
-    if (record.status === "未发布任何视频") return { label: "查看", action: "edit", primary: false };
-    if (record.type === "video" && record.codeStatus !== "已收到" && ["已完成", "待索要Code", "内容处理中", "已发货"].includes(record.status)) {
-      return { label: "索要 Code", action: "message", primary: true };
+  function sampleActionButtons(record) {
+    const id = escapeHtml(record.id);
+    if (record.status === "待审核") {
+      return `<button class="mini-button primary edit-only" data-action="approve" data-id="${id}">通过</button><button class="mini-button edit-only" data-action="reject" data-id="${id}">拒绝</button>`;
     }
-    if (isHandoffReady(record)) return { label: "复制任务", action: "copy-task", primary: true };
-    if (anomalies.length) return { label: "核实", action: "edit", primary: false };
-    return { label: "编辑", action: "edit", primary: false };
+    if (record.status === "待补全") {
+      return `<button class="mini-button primary edit-only" data-action="edit" data-id="${id}">补充资料</button><button class="mini-button edit-only" data-action="reject" data-id="${id}">拒绝</button>`;
+    }
+    if (record.status === "内容处理中") {
+      return `<button class="mini-button primary edit-only" data-action="performance-message" data-id="${id}">14 天履约提醒</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+    }
+    if (record.status === "已发货") {
+      return `<button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+    }
+    if (record.status === "未发布任何视频") {
+      return `<button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+    }
+    if (isHandoffReady(record)) {
+      return `<button class="mini-button primary" data-action="copy-task" data-id="${id}">复制任务卡</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+    }
+    return `<button class="mini-button" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
   }
 
   function renderSamples() {
@@ -1677,7 +1706,7 @@ window.SEED_DATA = {
       const anomalies = getAnomalies(record);
       const selectable = canSelect && record.status === "待审核";
       const checked = selectedSampleIds.has(record.id);
-      const primary = primaryActionForRecord(record);
+      const missingCode = record.status === "已完成" && !record.code;
       return `<tr>
         <td class="select-cell">${selectable ? `<input type="checkbox" data-select-id="${escapeHtml(record.id)}" ${checked ? "checked" : ""} aria-label="选择 @${escapeAttr(record.creatorId || "未命名")}">` : ""}</td>
         <td class="mono">${escapeHtml(record.date || "—")}</td>
@@ -1685,13 +1714,8 @@ window.SEED_DATA = {
         <td class="brand-name-cell" title="${escapeAttr(record.productName || record.productId || "")}"><strong>${escapeHtml(brandForRecord(record))}</strong><small>库存 ${escapeHtml(record.productStock ?? "—")} · 可售 ${escapeHtml(record.availableSamples ?? "—")} · ${escapeHtml(record.remainingDays || "—")}</small></td>
         <td><span class="mono">${escapeHtml(record.productId || "—")}</span><small>${escapeHtml(record.sku || "—")}</small></td>
         <td>${escapeHtml(record.bd || "—")}</td>
-        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(displayRecordStatus(record.status))}</span>${record.status === "未发布任何视频" ? `<span class="special-note">未交付任何视频 · 不计入已完成</span>` : ""}${anomalies.length ? `<small class="anomaly-text">${escapeHtml(anomalies.slice(0, 2).join(" · "))}</small>` : ""}</td>
-        <td><div class="row-actions">
-          <button class="mini-button ${primary.primary ? "primary" : ""} ${primary.action !== "copy-task" ? "edit-only" : ""}" data-action="${primary.action}" data-id="${escapeHtml(record.id)}">${escapeHtml(primary.label)}</button>
-          <button class="mini-button" data-action="copy-all" data-id="${escapeHtml(record.id)}">一键复制</button>
-          ${primary.action !== "edit" ? `<button class="mini-button edit-only" data-action="edit" data-id="${escapeHtml(record.id)}">编辑</button>` : ""}
-          ${record.status === "待审核" ? `<button class="mini-button edit-only" data-action="reject" data-id="${escapeHtml(record.id)}">拒绝</button>` : record.status === "待补全" ? `<button class="mini-button edit-only" data-action="reject" data-id="${escapeHtml(record.id)}">拒绝</button>` : ""}
-        </div></td>
+        <td><span class="status-badge ${statusClass(record.status)}">${escapeHtml(displayRecordStatus(record.status))}</span>${record.status === "未发布任何视频" ? `<span class="special-note">未交付任何视频 · 不计入已完成</span>` : ""}${missingCode ? `<button class="inline-hint edit-only" data-action="code" data-id="${escapeHtml(record.id)}">待添加 Code</button>` : ""}${anomalies.length ? `<small class="anomaly-text">${escapeHtml(anomalies.slice(0, 2).join(" · "))}</small>` : ""}</td>
+        <td><div class="row-actions">${sampleActionButtons(record)}</div></td>
       </tr>`;
     }).join("");
     table.innerHTML = header + `<tbody>${body || `<tr><td colspan="8"><div class="empty-state">没有符合条件的样品申请</div></td></tr>`}</tbody>`;
@@ -1976,6 +2000,27 @@ window.SEED_DATA = {
       toast(`批量审核失败：${error.message}`, true);
       updateBatchButtons();
     }
+  }
+
+  function generatePerformanceMessage(record) {
+    const creator = cleanHandle(record.creatorId) || "creator";
+    const product = record.productName || "produk ini";
+    return `Hai @${creator},\n\nKami menindaklanjuti sampel ${product} yang telah Anda terima. Masa pemenuhan konten adalah 14 hari sejak sampel diterima. Mohon unggah video dalam periode tersebut dan kirimkan tautan video kepada kami agar proses kerja sama dapat dilanjutkan.\n\nTerima kasih.\n\n---\n\n您好 @${creator}，\n\n关于您已收到的「${product}」样品，达人内容履约期为收到样品后 14 天内。请您在此期间完成并上传视频，并将视频链接发送给我们，以便继续合作流程。\n\n谢谢！`;
+  }
+
+  function openPerformanceDialog(id) {
+    const record = state.records.find((item) => item.id === id);
+    if (!record) return;
+    activePerformanceId = id;
+    $("#performance-creator").textContent = `@${cleanHandle(record.creatorId) || "未命名"}`;
+    $("#performance-text").value = generatePerformanceMessage(record);
+    $("#performance-dialog").showModal();
+  }
+
+  async function copyPerformanceMessage() {
+    const text = $("#performance-text").value.trim();
+    if (!text) { toast("话术不能为空", true); return; }
+    await copyText(text, "14 天履约期双语话术已复制");
   }
 
   function openMessageDialog(id) {
