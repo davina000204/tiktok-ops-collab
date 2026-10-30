@@ -1092,6 +1092,7 @@ window.SEED_DATA = {
 
   function renderAll() {
     resolveCreatorAliases(state.records);
+    state.records = recordsFromLatestFullSnapshot(state.records);
     state.records = dedupeApplicationRecords(state.records);
     renderCounts();
     renderOverview();
@@ -1144,8 +1145,13 @@ window.SEED_DATA = {
     const missingVideo = state.records.filter((record) => record.type === "video" && !record.videoUrl).length;
     const missingCode = state.records.filter((record) => record.status === "Code已收到" && !record.code).length;
 
+    const sourceTotals = state.records
+      .map((record) => Number(record.sourceTotal))
+      .filter(Number.isFinite);
+    const tiktokTotal = sourceTotals.length ? Math.max(...sourceTotals) : state.records.length;
     $("#health-legend").innerHTML = [
-      healthLegendRow("记录总数", state.records.length, false),
+      healthLegendRow("TikTok 申请总数", tiktokTotal, false),
+      healthLegendRow("去重后合作记录", state.records.length, false),
       healthLegendRow("缺少达人 ID", missingCreator, true),
       healthLegendRow("缺少视频链接", missingVideo, true),
       healthLegendRow("Code 缺失", missingCode, true)
@@ -1319,7 +1325,7 @@ window.SEED_DATA = {
 
     for (const duplicate of ordered.slice(1)) {
       Object.entries(duplicate).forEach(([key, value]) => {
-        if (["id", "status", "date", "appliedAt", "createdAt", "updatedAt", "source", "sourceSyncedAt"].includes(key)) return;
+        if (["id", "status", "date", "appliedAt", "createdAt", "updatedAt", "source", "sourceSyncedAt", "sourceScope"].includes(key)) return;
         if (!isFilled(primary[key]) && isFilled(value)) primary[key] = value;
       });
       for (const field of ["creatorName", "productName", "sku", "campaignName", "note"]) {
@@ -1348,7 +1354,7 @@ window.SEED_DATA = {
     if (syncedTimestamps.length) primary.sourceSyncedAt = new Date(Math.max(...syncedTimestamps)).toISOString();
 
     primary.creatorAvatar = ordered.map((record) => safeAvatarUrl(record.creatorAvatar)).find(Boolean) || "";
-    primary.source = buildSourceMetadata(primary.source || "TikTok页面实时同步", primary.creatorAvatar, primary.sourcePosition, primary.sourceSyncedAt);
+    primary.source = buildSourceMetadata(primary.source || "TikTok页面实时同步", primary.creatorAvatar, primary.sourcePosition, primary.sourceSyncedAt, primary.sourceScope, primary.sourceTotal);
     return primary;
   }
 
@@ -1362,6 +1368,19 @@ window.SEED_DATA = {
     return [...groups.values()]
       .map(mergeDuplicateApplication)
       .sort(compareApplicationTimeDesc);
+  }
+
+  function recordsFromLatestFullSnapshot(records) {
+    const fullSnapshots = records
+      .filter((record) => record.sourceScope === "full" && record.sourceSyncedAt)
+      .map((record) => Date.parse(record.sourceSyncedAt))
+      .filter(Number.isFinite);
+    if (!fullSnapshots.length) return records;
+    const latestFullSnapshot = Math.max(...fullSnapshots);
+    return records.filter((record) => {
+      const snapshotTime = Date.parse(record.sourceSyncedAt || "");
+      return Number.isFinite(snapshotTime) && snapshotTime >= latestFullSnapshot;
+    });
   }
 
   function creatorAvatarFor(record) {
@@ -1880,6 +1899,8 @@ window.SEED_DATA = {
     let avatar = "";
     let sourcePosition = null;
     let syncedAt = "";
+    let scope = "";
+    let total = null;
     const sourceParts = [];
     for (const part of parts) {
       if (part.startsWith("avatar=")) {
@@ -1889,14 +1910,19 @@ window.SEED_DATA = {
         if (Number.isFinite(parsed)) sourcePosition = parsed;
       } else if (part.startsWith("syncedAt=")) {
         try { syncedAt = decodeURIComponent(part.slice(9)); } catch { syncedAt = part.slice(9); }
+      } else if (part.startsWith("scope=")) {
+        scope = part.slice(6);
+      } else if (part.startsWith("total=")) {
+        const parsed = Number(part.slice(6));
+        if (Number.isFinite(parsed)) total = parsed;
       } else if (part) {
         sourceParts.push(part);
       }
     }
-    return { source: sourceParts.join("|") || "导入", creatorAvatar: avatar, sourcePosition, syncedAt };
+    return { source: sourceParts.join("|") || "导入", creatorAvatar: avatar, sourcePosition, syncedAt, scope, total };
   }
 
-  function buildSourceMetadata(source, creatorAvatar, sourcePosition, syncedAt = "") {
+  function buildSourceMetadata(source, creatorAvatar, sourcePosition, syncedAt = "", syncScope = "", sourceTotal = null) {
     const metadata = parseSourceMetadata(source);
     const parts = [metadata.source];
     const position = sourcePosition === "" || sourcePosition == null ? NaN : Number(sourcePosition);
@@ -1905,6 +1931,10 @@ window.SEED_DATA = {
     if (avatar) parts.push(`avatar=${encodeURIComponent(avatar)}`);
     const snapshot = String(syncedAt || metadata.syncedAt || "").trim();
     if (snapshot) parts.push(`syncedAt=${encodeURIComponent(snapshot)}`);
+    const scope = String(syncScope || metadata.scope || "").trim();
+    if (scope) parts.push(`scope=${scope}`);
+    const total = Number(sourceTotal ?? metadata.total);
+    if (Number.isFinite(total)) parts.push(`total=${total}`);
     return parts.join("|");
   }
 
@@ -1946,6 +1976,8 @@ window.SEED_DATA = {
       source: sourceMeta.source,
       sourcePosition: Number.isFinite(sourcePosition) ? sourcePosition : null,
       sourceSyncedAt: String(raw.sourceSyncedAt || sourceMeta.syncedAt || "").trim(),
+      sourceScope: String(raw.sourceScope || sourceMeta.scope || "").trim(),
+      sourceTotal: Number(raw.sourceTotal ?? sourceMeta.total ?? 0) || null,
       appliedAt: String(raw.appliedAt || raw["申请时间"] || "").trim(),
       createdAt: raw.createdAt || "",
       updatedAt: raw.updatedAt || new Date().toISOString()
@@ -2460,7 +2492,7 @@ window.SEED_DATA = {
       code_status: record.codeStatus || "未请求",
       campaign_id: record.campaignId || "",
       showcase: record.showcase || "",
-      source: buildSourceMetadata(record.source || "cloud", record.creatorAvatar, record.sourcePosition, record.sourceSyncedAt)
+      source: buildSourceMetadata(record.source || "cloud", record.creatorAvatar, record.sourcePosition, record.sourceSyncedAt, record.sourceScope, record.sourceTotal)
     };
   }
 
