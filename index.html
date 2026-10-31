@@ -1190,6 +1190,7 @@ window.SEED_DATA = {
     if (action === "approve") updateStatus(id, "待拍摄", { approved: "是" });
     if (action === "reject") updateStatus(id, "已拒绝", { approved: "否" });
     if (action === "message") openMessageDialog(id);
+    if (action === "copy-code-message") copyCodeRequestMessage(id);
     if (action === "performance-message") openPerformanceDialog(id);
     if (action === "code") openCodeDialog(id);
     if (action === "add-video-entry") addVideoEntry();
@@ -1681,6 +1682,9 @@ window.SEED_DATA = {
     if (record.status === "未发布任何视频") {
       return `<button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
+    if (record.status === "已完成" && !record.code) {
+      return `<button class="mini-button primary edit-only" data-action="copy-code-message" data-id="${id}">一键复制话术</button><button class="mini-button" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+    }
     if (isHandoffReady(record)) {
       return `<button class="mini-button primary" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
@@ -2049,6 +2053,23 @@ window.SEED_DATA = {
       return `Hi @${creator}，\n\n感谢你为「${product}」制作视频。\n\n为了帮助商家给你的视频投放流量、带来更多买家，请提供这条视频的 TikTok 视频推广 Code：\n${video}\n\n收到 Code 后，我们会立即交给商家进行投放。\n\n谢谢！`;
     }
     return `Hai @${creator},\n\nTerima kasih sudah membuat video untuk ${product}.\n\nUntuk membantu merchant meningkatkan performa video dan menjangkau lebih banyak pembeli, mohon kirimkan kode promosi/iklan video (video promotion code) untuk video berikut:\n${video}\n\nSetelah kode diterima, kami akan segera meneruskannya ke merchant untuk proses boosting.\n\nTerima kasih!`;
+  }
+
+  async function copyCodeRequestMessage(id) {
+    const record = state.records.find((item) => item.id === id);
+    if (!record) return;
+    const language = state.settings.defaultLanguage || "id";
+    await copyText(generateMessage(record, language), "索要 Code 话术已复制");
+    if (!canEdit() || record.codeStatus === "已收到") return;
+    record.codeStatus = "已请求";
+    record.updatedAt = new Date().toISOString();
+    try {
+      await cloudUpsertRecord(record);
+      renderAll();
+      toast("索要 Code 话术已复制，并标记为 Code 已请求");
+    } catch (error) {
+      toast(`话术已复制，但状态标记失败：${error.message}`, true);
+    }
   }
 
   async function copyCurrentMessage() {
