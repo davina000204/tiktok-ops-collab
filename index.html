@@ -1667,7 +1667,7 @@ window.SEED_DATA = {
   function sampleActionButtons(record) {
     const id = escapeHtml(record.id);
     if (record.status === "待审核") {
-      return `<button class="mini-button primary edit-only" data-action="approve" data-id="${id}">通过</button><button class="mini-button edit-only" data-action="reject" data-id="${id}">拒绝</button>`;
+      return `<button class="mini-button primary edit-only" data-action="approve" data-id="${id}">通过</button><button class="mini-button edit-only" data-action="reject" data-id="${id}">拒绝</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
     if (record.status === "待补全") {
       return `<button class="mini-button primary edit-only" data-action="edit" data-id="${id}">补充资料</button><button class="mini-button edit-only" data-action="reject" data-id="${id}">拒绝</button>`;
