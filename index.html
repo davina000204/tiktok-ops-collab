@@ -121,6 +121,7 @@ button { cursor: pointer; }
 .table-panel { overflow: hidden; }
 .table-title { padding: 21px 22px 17px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
 .table-title p { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+.table-title-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; min-width: 920px; }
 .select-cell { width: 44px; text-align: center; padding-left: 14px !important; padding-right: 8px !important; }
@@ -200,6 +201,17 @@ td small.anomaly-text { color: var(--amber); font-weight: 700; }
 .message-controls label { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted); font-weight: 700; }
 .creator-pill { background: var(--teal-soft); color: var(--teal-dark); border-radius: 99px; padding: 6px 10px; font-size: 11px; font-weight: 800; }
 .message-text { min-height: 220px; font-family: inherit; line-height: 1.6; }
+.template-dialog { width: min(900px, calc(100vw - 32px)); }
+.template-help { margin: -6px 0 16px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.template-editor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.template-editor-section { display: grid; gap: 10px; min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: #fbfcfb; }
+.template-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.template-section-heading strong { display: block; color: var(--ink); font-size: 13px; }
+.template-section-heading small { display: block; margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+.template-section-heading select { height: 34px; border: 1px solid var(--line); border-radius: 8px; background: white; padding: 0 8px; color: var(--ink); font-size: 11px; }
+.template-editor-section .message-text { min-height: 300px; }
+.template-variables { margin: 13px 0 0; color: var(--muted); font-size: 10px; line-height: 1.8; }
+.template-variables code { display: inline-block; margin: 0 2px; padding: 1px 5px; border-radius: 5px; background: #eef5f2; color: var(--teal-dark); font-size: 10px; }
 .small-dialog { width: min(520px, calc(100vw - 32px)); }
 .full-label { display: grid; gap: 8px; color: var(--muted); font-size: 11px; font-weight: 750; }
 .toast { position: fixed; right: 24px; bottom: 24px; padding: 12px 16px; border-radius: 11px; background: #132821; color: #fff; font-size: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.2); opacity: 0; transform: translateY(10px); pointer-events: none; transition: .2s ease; z-index: 100; max-width: 360px; }
@@ -207,7 +219,7 @@ td small.anomaly-text { color: var(--amber); font-weight: 700; }
 .toast.error { background: #8f312e; }
 @media (max-width: 1120px) { .app-shell { grid-template-columns: 210px minmax(0,1fr); } .sidebar { width: 210px; } .main-area { padding: 26px 24px 40px; } .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .overview-grid, .data-grid { grid-template-columns: 1fr; } .pipeline { grid-template-columns: repeat(5, 150px); overflow-x: auto; padding-bottom: 6px; } .schema-grid { grid-template-columns: 130px 1fr; } }
 @media (max-width: 900px) { .video-entry { grid-template-columns: 1fr 1fr; } .video-entry .remove-video-entry { grid-column: 2; justify-self: end; } }
-@media (max-width: 760px) { .app-shell { display: block; } .sidebar { position: static; width: auto; padding: 16px; } .brand-block { padding-bottom: 14px; } .main-nav { grid-template-columns: repeat(3, 1fr); } .nav-item { justify-content: center; padding: 9px; font-size: 12px; } .nav-item span, .nav-item b { display: none; } .sidebar-note { display: none; } .main-area { padding: 20px 14px 34px; } .topbar { align-items: flex-start; } .topbar h1 { font-size: 24px; } .top-actions { flex-direction: column; align-items: stretch; } .bulk-bar { align-items: stretch; flex-direction: column; } .bulk-bar > span { margin-right: 0; } .kpi-grid { grid-template-columns: 1fr 1fr; } .toolbar { flex-wrap: wrap; } .search-wrap { flex-basis: 100%; } .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: auto; } .video-fields-heading { align-items: flex-start; flex-direction: column; } .video-entry { grid-template-columns: 1fr; } .video-entry .remove-video-entry { grid-column: auto; justify-self: end; } .health-ring-wrap { align-items: flex-start; } .table-title { flex-direction: column; } }
+@media (max-width: 760px) { .app-shell { display: block; } .sidebar { position: static; width: auto; padding: 16px; } .brand-block { padding-bottom: 14px; } .main-nav { grid-template-columns: repeat(3, 1fr); } .nav-item { justify-content: center; padding: 9px; font-size: 12px; } .nav-item span, .nav-item b { display: none; } .sidebar-note { display: none; } .main-area { padding: 20px 14px 34px; } .topbar { align-items: flex-start; } .topbar h1 { font-size: 24px; } .top-actions { flex-direction: column; align-items: stretch; } .bulk-bar { align-items: stretch; flex-direction: column; } .bulk-bar > span { margin-right: 0; } .kpi-grid { grid-template-columns: 1fr 1fr; } .toolbar { flex-wrap: wrap; } .search-wrap { flex-basis: 100%; } .form-grid { grid-template-columns: 1fr; } .span-2 { grid-column: auto; } .video-fields-heading { align-items: flex-start; flex-direction: column; } .video-entry { grid-template-columns: 1fr; } .video-entry .remove-video-entry { grid-column: auto; justify-self: end; } .health-ring-wrap { align-items: flex-start; } .table-title { flex-direction: column; } .table-title-actions { width: 100%; justify-content: space-between; } .template-editor-grid { grid-template-columns: 1fr; } .template-editor-section .message-text { min-height: 220px; } }
 
 /* Collaborative cloud layer */
 body.auth-locked .app-shell { display: none; }
@@ -448,7 +460,10 @@ body.is-viewer .read-only-note { display:block; }
               <h2 id="records-title">全部申请</h2>
               <p id="records-description">按申请时间从近到远排列；同一达人 + 商品 PID 自动合并为一条。</p>
             </div>
-            <span class="count-chip" id="sample-count-label">0 条</span>
+            <div class="table-title-actions">
+              <button class="button subtle edit-only" id="edit-message-templates-btn">编辑话术</button>
+              <span class="count-chip" id="sample-count-label">0 条</span>
+            </div>
           </div>
           <div class="table-scroll"><table id="sample-table"></table></div>
         </article>
@@ -652,6 +667,36 @@ body.is-viewer .read-only-note { display:block; }
     <div class="dialog-actions">
       <button type="button" class="button subtle" id="copy-message-btn">复制话术</button>
       <button type="button" class="button primary" id="received-code-btn">已收到 Code</button>
+    </div>
+  </dialog>
+
+  <dialog id="message-template-dialog" class="dialog template-dialog">
+    <div class="dialog-heading">
+      <div><p class="eyebrow">MESSAGE TEMPLATES</p><h2>编辑自动化话术</h2></div>
+      <button type="button" class="icon-button" data-close-dialog="message-template-dialog">×</button>
+    </div>
+    <p class="template-help">话术会按达人及商品信息自动替换变量。修改后对全部协作者生效。</p>
+    <div class="template-editor-grid">
+      <section class="template-editor-section">
+        <div class="template-section-heading">
+          <div><strong>索要 Code 话术</strong><small>点击表格中的「索要 Code」时使用</small></div>
+          <select id="template-code-language"><option value="id">Bahasa Indonesia</option><option value="en">English</option><option value="zh">中文</option></select>
+        </div>
+        <textarea id="template-code-message" class="message-text" rows="12"></textarea>
+      </section>
+      <section class="template-editor-section">
+        <div class="template-section-heading">
+          <div><strong>投流话术</strong><small>点击表格中的「投流」时使用</small></div>
+        </div>
+        <textarea id="template-traffic-message" class="message-text" rows="12"></textarea>
+      </section>
+    </div>
+    <p class="template-variables"><b>可用变量：</b><code>{{creator}}</code> 达人 · <code>{{product}}</code> 产品名称 · <code>{{productId}}</code> 商品 ID · <code>{{brand}}</code> 品牌 · <code>{{videoLinks}}</code> 视频链接 · <code>{{vid}}</code> vid · <code>{{code}}</code> Code</p>
+    <div class="dialog-actions">
+      <button type="button" class="button subtle" id="reset-message-templates-btn">恢复默认</button>
+      <span class="spacer"></span>
+      <button type="button" class="button subtle" data-close-dialog="message-template-dialog">取消</button>
+      <button type="button" class="button primary" id="save-message-templates-btn">保存话术</button>
     </div>
   </dialog>
 
@@ -979,6 +1024,50 @@ window.SEED_DATA = {
     "Code状态", "产品名称", "SKU", "活动ID", "商品在达人橱窗"
   ];
 
+  const DEFAULT_WORKFLOW_TEMPLATES = Object.freeze({
+    codeRequest: Object.freeze({
+      id: `Hai @{{creator}},
+
+Terima kasih sudah membuat video untuk {{product}}.
+
+Untuk membantu merchant meningkatkan performa video dan menjangkau lebih banyak pembeli, mohon kirimkan kode promosi/iklan video (video promotion code) untuk video berikut:
+{{videoLinks}}
+
+Setelah kode diterima, kami akan segera meneruskannya ke merchant untuk proses boosting.
+
+Terima kasih!`,
+      en: `Hi @{{creator}},
+
+Thank you for creating the video for {{product}}.
+
+To help the merchant boost your video and reach more buyers, please send us the TikTok video promotion code for this video:
+{{videoLinks}}
+
+Once we receive the code, we will pass it to the merchant for the boosting process.
+
+Thank you!`,
+      zh: `Hi @{{creator}}，
+
+感谢你为「{{product}}」制作视频。
+
+为了帮助商家给你的视频投放流量、带来更多买家，请提供这条视频的 TikTok 视频推广 Code：
+{{videoLinks}}
+
+收到 Code 后，我们会立即交给商家进行投放。
+
+谢谢！`
+    }),
+    traffic: `达人：@{{creator}}
+产品名称：{{product}}
+商品ID：{{productId}}
+视频链接：
+{{videoLinks}}
+vid：
+{{vid}}
+Code：
+{{code}}`
+  });
+
   const PRODUCT_BRAND_BY_PID = Object.freeze({
     "1729617576838006966": "Sanjaya snack",
     "1729617576838006996": "Sanjaya snack",
@@ -1050,6 +1139,7 @@ window.SEED_DATA = {
   let activeMessageId = null;
   let activePerformanceId = null;
   let activeCodeId = null;
+  let messageTemplateDraft = null;
   let selectedSampleIds = new Set();
   let selectedVideoIds = new Set();
 
@@ -1073,8 +1163,9 @@ window.SEED_DATA = {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.records) && Array.isArray(parsed.products)) {
+          const settings = { ...(window.SEED_DATA?.settings || {}), ...(parsed.settings || {}) };
           return {
-            settings: { ...(window.SEED_DATA?.settings || {}), ...(parsed.settings || {}) },
+            settings: { ...settings, workflowTemplates: normalizeWorkflowTemplates(settings.workflowTemplates) },
             products: parsed.products,
             records: parsed.records.map(normalizeRecord)
           };
@@ -1089,7 +1180,7 @@ window.SEED_DATA = {
   function cloneSeed() {
     const seed = window.SEED_DATA || { settings: {}, products: [], records: [] };
     return {
-      settings: { ...seed.settings },
+      settings: { ...seed.settings, workflowTemplates: normalizeWorkflowTemplates(seed.settings?.workflowTemplates) },
       products: structuredCloneSafe(seed.products),
       records: seed.records.map(normalizeRecord)
     };
@@ -1097,6 +1188,20 @@ window.SEED_DATA = {
 
   function structuredCloneSafe(value) {
     return JSON.parse(JSON.stringify(value));
+  }
+
+  function normalizeWorkflowTemplates(raw = {}) {
+    const source = raw && typeof raw === "object" ? raw : {};
+    const codeRequest = source.codeRequest && typeof source.codeRequest === "object" ? source.codeRequest : {};
+    const pick = (value, fallback) => String(value ?? "").trim() ? String(value) : fallback;
+    return {
+      codeRequest: {
+        id: pick(codeRequest.id, DEFAULT_WORKFLOW_TEMPLATES.codeRequest.id),
+        en: pick(codeRequest.en, DEFAULT_WORKFLOW_TEMPLATES.codeRequest.en),
+        zh: pick(codeRequest.zh, DEFAULT_WORKFLOW_TEMPLATES.codeRequest.zh)
+      },
+      traffic: pick(source.traffic, DEFAULT_WORKFLOW_TEMPLATES.traffic)
+    };
   }
 
   function persist() {
@@ -1162,6 +1267,13 @@ window.SEED_DATA = {
     $("#message-language").addEventListener("change", updateMessageText);
     $("#copy-message-btn").addEventListener("click", copyCurrentMessage);
     $("#received-code-btn").addEventListener("click", openCodeDialogFromMessage);
+    $("#edit-message-templates-btn").addEventListener("click", openMessageTemplateDialog);
+    $("#template-code-language").addEventListener("change", () => {
+      captureMessageTemplateDraft();
+      renderMessageTemplateEditorLanguage();
+    });
+    $("#save-message-templates-btn").addEventListener("click", saveMessageTemplates);
+    $("#reset-message-templates-btn").addEventListener("click", resetMessageTemplates);
     $("#save-code-btn").addEventListener("click", saveCode);
     $("#copy-performance-btn").addEventListener("click", copyPerformanceMessage);
     $("#record-form").addEventListener("submit", (event) => event.preventDefault());
@@ -1689,12 +1801,12 @@ window.SEED_DATA = {
       return `<button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
     if (isVideoContentType(record.type) && record.status === "已完成" && !record.code) {
-      return `<button class="mini-button primary edit-only" data-action="copy-code-message" data-id="${id}">一键复制话术</button><button class="mini-button" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+      return `<button class="mini-button primary edit-only" data-action="copy-code-message" data-id="${id}">索要 Code</button><button class="mini-button" data-action="copy-all" data-id="${id}">投流</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
     if (isHandoffReady(record)) {
-      return `<button class="mini-button primary" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+      return `<button class="mini-button primary" data-action="copy-all" data-id="${id}">投流</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
-    return `<button class="mini-button" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
+    return `<button class="mini-button" data-action="copy-all" data-id="${id}">投流</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
   }
 
   function renderSamples() {
@@ -2058,17 +2170,86 @@ window.SEED_DATA = {
     $("#message-text").value = generateMessage(record, $("#message-language").value);
   }
 
+  function messageTemplateValues(record, emptyValue = "—") {
+    const entries = videoEntries(record);
+    const numbered = (values) => values.length
+      ? values.map((value, index) => `${values.length > 1 ? `${index + 1}. ` : ""}${value}`).join("\n")
+      : emptyValue;
+    return {
+      creator: cleanHandle(record.creatorId) || "creator",
+      product: record.productName || "this product",
+      productId: record.productId || "—",
+      brand: brandForRecord(record) || "—",
+      videoLinks: numbered(entries.map((entry) => entry.url).filter(Boolean)),
+      vid: numbered(entries.map((entry) => entry.vid).filter(Boolean)),
+      code: numbered(entries.map((entry) => entry.code).filter(Boolean))
+    };
+  }
+
+  function renderWorkflowTemplate(template, values) {
+    return String(template || "").replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => values[key] ?? "");
+  }
+
   function generateMessage(record, language) {
-    const creator = cleanHandle(record.creatorId) || "creator";
-    const product = record.productName || "this product";
-    const video = record.videoUrl || "[请补充视频链接]";
-    if (language === "en") {
-      return `Hi @${creator},\n\nThank you for creating the video for ${product}.\n\nTo help the merchant boost your video and reach more buyers, please send us the TikTok video promotion code for this video:\n${video}\n\nOnce we receive the code, we will pass it to the merchant for the boosting process.\n\nThank you!`;
+    const templates = normalizeWorkflowTemplates(state.settings.workflowTemplates);
+    const template = templates.codeRequest[language] || templates.codeRequest.id;
+    return renderWorkflowTemplate(template, messageTemplateValues(record, "[请补充视频链接]"));
+  }
+
+  function generateTrafficMessage(record) {
+    const templates = normalizeWorkflowTemplates(state.settings.workflowTemplates);
+    return renderWorkflowTemplate(templates.traffic, messageTemplateValues(record, "—"));
+  }
+
+  function openMessageTemplateDialog() {
+    if (!canEdit()) { toast("当前角色不能编辑话术", true); return; }
+    messageTemplateDraft = normalizeWorkflowTemplates(state.settings.workflowTemplates);
+    $("#template-code-language").value = state.settings.defaultLanguage || "id";
+    $("#template-traffic-message").value = messageTemplateDraft.traffic;
+    renderMessageTemplateEditorLanguage();
+    $("#message-template-dialog").showModal();
+  }
+
+  function captureMessageTemplateDraft() {
+    if (!messageTemplateDraft) return;
+    const language = $("#template-code-language").value || "id";
+    messageTemplateDraft.codeRequest[language] = $("#template-code-message").value;
+    messageTemplateDraft.traffic = $("#template-traffic-message").value;
+  }
+
+  function renderMessageTemplateEditorLanguage() {
+    if (!messageTemplateDraft) return;
+    const language = $("#template-code-language").value || "id";
+    $("#template-code-message").value = messageTemplateDraft.codeRequest[language] || DEFAULT_WORKFLOW_TEMPLATES.codeRequest[language] || "";
+  }
+
+  function resetMessageTemplates() {
+    messageTemplateDraft = structuredCloneSafe(DEFAULT_WORKFLOW_TEMPLATES);
+    $("#template-traffic-message").value = messageTemplateDraft.traffic;
+    renderMessageTemplateEditorLanguage();
+    toast("已恢复默认话术，点击保存后生效");
+  }
+
+  async function saveMessageTemplates() {
+    if (!canEdit()) { toast("当前角色不能保存话术", true); return; }
+    captureMessageTemplateDraft();
+    const templates = normalizeWorkflowTemplates(messageTemplateDraft);
+    if (!templates.codeRequest.id.trim() || !templates.codeRequest.en.trim() || !templates.codeRequest.zh.trim() || !templates.traffic.trim()) {
+      toast("话术不能为空", true);
+      return;
     }
-    if (language === "zh") {
-      return `Hi @${creator}，\n\n感谢你为「${product}」制作视频。\n\n为了帮助商家给你的视频投放流量、带来更多买家，请提供这条视频的 TikTok 视频推广 Code：\n${video}\n\n收到 Code 后，我们会立即交给商家进行投放。\n\n谢谢！`;
+    try {
+      setSyncStatus("正在保存话术...");
+      await cloudUpsertWorkflowTemplates(templates);
+      state.settings.workflowTemplates = templates;
+      $("#message-template-dialog").close();
+      messageTemplateDraft = null;
+      setSyncStatus("云端已同步");
+      toast("话术已保存，所有协作者将自动使用新版本");
+    } catch (error) {
+      setSyncStatus("话术保存失败");
+      toast(`话术保存失败：${error.message}`, true);
     }
-    return `Hai @${creator},\n\nTerima kasih sudah membuat video untuk ${product}.\n\nUntuk membantu merchant meningkatkan performa video dan menjangkau lebih banyak pembeli, mohon kirimkan kode promosi/iklan video (video promotion code) untuk video berikut:\n${video}\n\nSetelah kode diterima, kami akan segera meneruskannya ke merchant untuk proses boosting.\n\nTerima kasih!`;
   }
 
   async function copyCodeRequestMessage(id) {
@@ -2157,13 +2338,13 @@ window.SEED_DATA = {
   async function copyRecordSummary(id) {
     const record = state.records.find((item) => item.id === id);
     if (!record) return;
-    await copyText(buildRecordCopyText(record), "达人、产品名称、商品 ID、视频链接、vid 和 Code 已复制");
+    await copyText(generateTrafficMessage(record), "投流话术已复制");
   }
 
   async function copyAllMerchantTasks() {
     const records = state.records.filter(isHandoffReady);
     if (!records.length) { toast("当前没有可复制的商家 Code 记录", true); return; }
-    await copyText(records.map(buildRecordCopyText).join("\n\n---\n\n"), `已复制 ${records.length} 条商家投流信息`);
+    await copyText(records.map(generateTrafficMessage).join("\n\n---\n\n"), `已复制 ${records.length} 条商家投流信息`);
   }
 
   async function copyDailyBrief() {
@@ -2913,17 +3094,22 @@ window.SEED_DATA = {
     cloudLoading = true;
     setSyncStatus("正在同步...");
     try {
-      const [productsResult, recordsResult, syncResult] = await Promise.all([
+      const [productsResult, recordsResult, syncResult, templatesResult] = await Promise.all([
         collab.from("products").select("*").order("name"),
         collab.from("records").select("*").order("updated_at", { ascending: false }),
-        collab.from("ops_status").select("*")
+        collab.from("ops_status").select("*"),
+        collab.from("workflow_templates").select("templates").eq("id", "global").maybeSingle()
       ]);
       if (productsResult.error) throw productsResult.error;
       if (recordsResult.error) throw recordsResult.error;
       if (syncResult.error) console.warn("Unable to load ops status", syncResult.error);
+      if (templatesResult.error) console.warn("Unable to load workflow templates", templatesResult.error);
       state.products = (productsResult.data || []).map(dbProductToApp);
       state.records = (recordsResult.data || []).map(dbRecordToApp);
       state.syncStatus = Object.fromEntries((syncResult.data || []).map((row) => [row.id, row]));
+      if (templatesResult.data?.templates) {
+        state.settings.workflowTemplates = normalizeWorkflowTemplates(templatesResult.data.templates);
+      }
       cloudLoading = false;
       renderAll();
       setSyncStatus("云端已同步");
@@ -3075,6 +3261,16 @@ window.SEED_DATA = {
     if (error) throw error;
   }
 
+  async function cloudUpsertWorkflowTemplates(templates) {
+    if (!collab || !cloudSession || !canEdit()) throw new Error("没有云端编辑权限");
+    const { error } = await collab.from("workflow_templates").upsert({
+      id: "global",
+      templates,
+      updated_by: cloudSession.user.id
+    }, { onConflict: "id" });
+    if (error) throw error;
+  }
+
   function subscribeCloud() {
     if (!collab || cloudChannel) return;
     cloudChannel = collab
@@ -3093,6 +3289,9 @@ window.SEED_DATA = {
         if (canAdmin()) renderMembers();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "ops_status" }, () => {
+        refreshCloudData().catch((error) => console.warn(error));
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "workflow_templates" }, () => {
         refreshCloudData().catch((error) => console.warn(error));
       })
       .subscribe((status) => {
