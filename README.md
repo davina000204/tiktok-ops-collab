@@ -54,7 +54,7 @@ https://davina000204.github.io/tiktok-ops-collab/
 - `deploy_storage.py`：静态文件上传脚本（不包含密钥）
 - `dist/index.html`：GitHub Pages 使用的单文件版本
 - `auto_ingest.py`：本地 OCR 自动导入脚本
-- `live-sync-extension/`：Chrome 实时同步扩展源码模板（不含真实令牌）
+- `live-sync-extension/`：Chrome 每小时同步扩展源码模板（不含真实令牌）
 - `schema_live_sync.sql`：实时同步 RPC 数据库结构
 - `截图并同步.command`：一键框选截图并写入云端
 - `启动自动同步.command`：监听 `inbox` 文件夹

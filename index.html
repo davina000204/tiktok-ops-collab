@@ -1420,7 +1420,7 @@ Code：
       if (latestSnapshot) {
         const ageMinutes = Math.max(0, Math.floor((Date.now() - latestSnapshot) / 60000));
         realtimeLabel.textContent = `TikTok 快照：${formatRelativeTime(ageMinutes)}`;
-        realtimeLabel.classList.toggle("stale", ageMinutes > 15);
+        realtimeLabel.classList.toggle("stale", ageMinutes > 70);
       } else {
         realtimeLabel.textContent = "TikTok 快照：等待首次数据";
         realtimeLabel.classList.add("stale");
@@ -1505,7 +1505,7 @@ Code：
     };
     if (tiktokAt) {
       const age = Math.max(0, Math.floor((Date.now() - tiktokAt) / 60000));
-      setFlow("#flow-tiktok", formatRelativeTime(age), age > 15);
+      setFlow("#flow-tiktok", formatRelativeTime(age), age > 70);
     } else {
       setFlow("#flow-tiktok", "等待样品页同步", true);
     }
