@@ -178,6 +178,7 @@ td small.anomaly-text { color: var(--amber); font-weight: 700; }
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { border-color: #83cbb8; box-shadow: 0 0 0 3px rgba(15,159,132,.08); }
 .span-2 { grid-column: span 2; }
 .video-fields { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fbfcfb; }
+.video-fields[hidden] { display: none; }
 .video-fields-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .video-fields-heading > div { display: grid; gap: 4px; }
 .video-fields-heading strong { color: var(--ink); font-size: 12px; }
@@ -581,7 +582,7 @@ body.is-viewer .read-only-note { display:block; }
             </div>
           </div>
           <div class="schema-grid">
-            <code>type</code><span>sample / video</span>
+            <code>type</code><span>sample / video / live / live_video</span>
             <code>creatorId</code><span>达人用户名，不带 @</span>
             <code>productId</code><span>TikTok 商品 ID</span>
             <code>sku</code><span>颜色或规格</span>
@@ -603,7 +604,7 @@ body.is-viewer .read-only-note { display:block; }
       </div>
       <input type="hidden" id="record-id">
       <div class="form-grid">
-        <label>记录类型<select id="field-type"><option value="sample">样品申请</option><option value="video">已完成视频</option></select></label>
+        <label>记录类型<select id="field-type"><option value="sample">样品申请</option><option value="video">已完成视频</option><option value="live">直播</option><option value="live_video">直播+视频</option></select></label>
         <label>日期<input id="field-date" type="date"></label>
         <label>达人用户名<input id="field-creator" placeholder="例如 ceksilla"></label>
         <label>达人昵称<input id="field-creator-name" placeholder="可选"></label>
@@ -1039,6 +1040,10 @@ window.SEED_DATA = {
     "内容处理中", "未发布任何视频", "已完成", "待索要Code", "Code已收到", "待投放", "已投放"
   ]);
 
+  function isVideoContentType(type) {
+    return type === "video" || type === "live_video";
+  }
+
   let state;
   let currentView = "overview";
   let editingId = null;
@@ -1150,6 +1155,7 @@ window.SEED_DATA = {
     $("#handoff-copy-all-btn").addEventListener("click", copyAllMerchantTasks);
     $("#save-record-btn").addEventListener("click", saveRecordFromForm);
     $("#delete-record-btn").addEventListener("click", deleteEditingRecord);
+    $("#field-type").addEventListener("change", () => syncVideoFieldVisibility($("#field-type").value));
     $("#video-entry-list").addEventListener("blur", (event) => {
       if (event.target.matches(".video-entry-url")) autofillVideoDetails(event.target);
     }, true);
@@ -1286,7 +1292,7 @@ window.SEED_DATA = {
 
   function renderOverview() {
     const pending = state.records.filter((record) => record.type === "sample" && ["待审核", "待补全"].includes(record.status));
-    const waitingCode = state.records.filter((record) => record.type === "video" && record.status !== "未发布任何视频" && record.codeStatus !== "已收到" && record.status !== "已投放");
+    const waitingCode = state.records.filter((record) => isVideoContentType(record.type) && record.status !== "未发布任何视频" && record.codeStatus !== "已收到" && record.status !== "已投放");
     const handoff = state.records.filter(isHandoffReady);
     const anomalies = state.records.filter((record) => getAnomalies(record).length);
     const noPost = state.records.filter((record) => record.status === "未发布任何视频");
@@ -1318,7 +1324,7 @@ window.SEED_DATA = {
     $("#health-ring-label").textContent = healthy;
 
     const missingCreator = state.records.filter((record) => !cleanHandle(record.creatorId) || record.creatorId === "待补全").length;
-    const missingVideo = state.records.filter((record) => record.type === "video" && record.status !== "未发布任何视频" && !record.videoUrl).length;
+    const missingVideo = state.records.filter((record) => isVideoContentType(record.type) && record.status !== "未发布任何视频" && !record.videoUrl).length;
     const missingCode = state.records.filter((record) => record.status === "Code已收到" && !record.code).length;
     const sourceTotals = state.records
       .filter((record) => record.sourceTotal !== null && record.sourceTotal !== undefined && record.sourceTotal !== "")
@@ -1494,7 +1500,7 @@ window.SEED_DATA = {
     const query = ($("#video-search")?.value || "").trim().toLowerCase();
     const status = $("#video-status-filter")?.value || "";
     return state.records
-      .filter((record) => record.type === "video")
+      .filter((record) => isVideoContentType(record.type))
       .filter((record) => !status || record.status === status)
       .filter((record) => matchesQuery(record, query))
       .sort(compareApplicationTimeDesc);
@@ -1673,7 +1679,7 @@ window.SEED_DATA = {
     if (record.status === "待补全") {
       return `<button class="mini-button primary edit-only" data-action="edit" data-id="${id}">补充资料</button><button class="mini-button edit-only" data-action="reject" data-id="${id}">拒绝</button>`;
     }
-    if (record.status === "内容处理中") {
+    if (isVideoContentType(record.type) && record.status === "内容处理中") {
       return `<button class="mini-button primary edit-only" data-action="performance-message" data-id="${id}">14 天履约提醒</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
     if (record.status === "已发货") {
@@ -1682,7 +1688,7 @@ window.SEED_DATA = {
     if (record.status === "未发布任何视频") {
       return `<button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
-    if (record.status === "已完成" && !record.code) {
+    if (isVideoContentType(record.type) && record.status === "已完成" && !record.code) {
       return `<button class="mini-button primary edit-only" data-action="copy-code-message" data-id="${id}">一键复制话术</button><button class="mini-button" data-action="copy-all" data-id="${id}">一键复制</button><button class="mini-button edit-only" data-action="edit" data-id="${id}">编辑</button>`;
     }
     if (isHandoffReady(record)) {
@@ -1776,6 +1782,7 @@ window.SEED_DATA = {
     editingId = id;
     const record = id ? state.records.find((item) => item.id === id) : null;
     const defaultType = record?.type || type || (currentView === "videos" ? "video" : "sample");
+    const defaultStatus = record?.status || (defaultType === "sample" ? "待审核" : defaultType === "live" ? "已完成" : "待索要Code");
     $("#record-dialog-title").textContent = record ? "编辑记录" : "新建记录";
     $("#record-id").value = record?.id || "";
     $("#field-type").value = defaultType;
@@ -1792,7 +1799,8 @@ window.SEED_DATA = {
     $("#field-method").value = record?.applicationMethod || "线上申请";
     $("#field-bd").value = record?.bd || state.settings.defaultBd || "";
     $("#field-approved").value = record?.approved || "";
-    $("#field-status").value = record?.status || (defaultType === "video" ? "待索要Code" : "待审核");
+    $("#field-status").value = defaultStatus;
+    syncVideoFieldVisibility(defaultType);
     setVideoEntryValues(record?.videoUrl || "", record?.vid || "", record?.code || "");
     $("#field-campaign").value = record?.campaignId || "";
     $("#field-showcase").value = record?.showcase || "";
@@ -1832,10 +1840,13 @@ window.SEED_DATA = {
   }
 
   function readRecordForm() {
-    const videoValues = readVideoEntryValues();
+    const recordType = $("#field-type").value;
+    const videoValues = recordType === "live"
+      ? { videoUrl: "", vid: "", code: "" }
+      : readVideoEntryValues();
     return normalizeRecord({
       id: $("#record-id").value || null,
-      type: $("#field-type").value,
+      type: recordType,
       date: $("#field-date").value,
       creatorId: $("#field-creator").value,
       creatorName: $("#field-creator-name").value,
@@ -1875,6 +1886,11 @@ window.SEED_DATA = {
     } catch (error) {
       toast(`删除失败：${error.message}`, true);
     }
+  }
+
+  function syncVideoFieldVisibility(type) {
+    const fields = $(".video-fields");
+    if (fields) fields.hidden = type === "live";
   }
 
   function autofillVideoDetails(input) {
@@ -2152,7 +2168,7 @@ window.SEED_DATA = {
 
   async function copyDailyBrief() {
     const pending = state.records.filter((record) => record.type === "sample" && ["待审核", "待补全"].includes(record.status));
-    const waitingCode = state.records.filter((record) => record.type === "video" && record.status !== "未发布任何视频" && record.codeStatus !== "已收到" && record.status !== "已投放");
+    const waitingCode = state.records.filter((record) => isVideoContentType(record.type) && record.status !== "未发布任何视频" && record.codeStatus !== "已收到" && record.status !== "已投放");
     const handoff = state.records.filter(isHandoffReady);
     const anomalies = state.records.filter((record) => getAnomalies(record).length);
     const noPost = state.records.filter((record) => record.status === "未发布任何视频");
@@ -2377,7 +2393,7 @@ window.SEED_DATA = {
       videoUrl,
       vid: String(raw.vid || raw["vid"] || raw["视频ID"] || (splitMultiline(videoUrl).length === 1 ? parsed?.vid : "") || "").trim(),
       code: String(raw.code || raw["code"] || raw["推广Code"] || "").trim(),
-      status: status || (type === "video" ? "待索要Code" : "待审核"),
+      status: status || (isVideoContentType(type) ? "待索要Code" : "待审核"),
       codeStatus: String(raw.codeStatus || raw["Code状态"] || (raw.code || raw["code"] ? "已收到" : "未请求")).trim(),
       campaignId: String(raw.campaignId || raw["活动ID"] || "").trim(),
       showcase: normalizeYesNo(raw.showcase || raw["商品在达人橱窗"] || ""),
@@ -2422,6 +2438,7 @@ window.SEED_DATA = {
       const firstParsed = parsedEntries.find(Boolean);
       if (firstParsed && (!record.creatorId || record.creatorId === "待补全")) record.creatorId = firstParsed.creatorId;
       if (record.type === "sample") record.type = "video";
+      if (record.type === "live_video") record.type = "live_video";
     }
     return record;
   }
@@ -2437,14 +2454,14 @@ window.SEED_DATA = {
     if (!cleanHandle(record.creatorId) || record.creatorId === "待补全") anomalies.push("缺少达人 ID");
     if (!record.productId) anomalies.push("缺少商品 ID");
     if (/待核实/.test(String(record.note || ""))) anomalies.push("OCR 识别待核实");
-    if (record.type === "video" && record.status !== "未发布任何视频" && !record.videoUrl) anomalies.push("缺少视频链接");
-    if (record.type === "video" && record.status !== "未发布任何视频" && !record.vid) anomalies.push("缺少 vid");
+    if (isVideoContentType(record.type) && record.status !== "未发布任何视频" && !record.videoUrl) anomalies.push("缺少视频链接");
+    if (isVideoContentType(record.type) && record.status !== "未发布任何视频" && !record.vid) anomalies.push("缺少 vid");
     if (record.status === "Code已收到" && !record.code) anomalies.push("缺少 Code");
     return anomalies;
   }
 
   function isHandoffReady(record) {
-    return record.type === "video" && record.status !== "未发布任何视频" && record.codeStatus === "已收到";
+    return isVideoContentType(record.type) && record.status !== "未发布任何视频" && record.codeStatus === "已收到";
   }
 
   function recordKey(record) {
